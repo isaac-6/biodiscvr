@@ -178,29 +178,41 @@ check_datasets <- function(loaded_data,
   
   
   # --- Log Session Info (Goes to file if sink active) ---
-  if (sink_active && verbose) { # Check sink_active before logging session info
+  if (sink_active && verbose) {
     message("\n--- Session Info ---")
     message("Timestamp: ", format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z"))
     si <- sessionInfo()
     message("R Version: ", si$R.version$string)
     message("Platform: ", si$platform)
-    # Determine package name dynamically
-    pkg_name <- NULL
-    if(requireNamespace("devtools", quietly = TRUE)){
-      pkg_path <- tryCatch(devtools::find_package_root(path="."), error=function(e) NULL)
-      if (!is.null(pkg_path)) pkg_name <- basename(pkg_path)
-    }
-    if (is.null(pkg_name)) pkg_name <- "multitracer.cvr" # Fallback: Replace with your actual name
     
-    if (requireNamespace(pkg_name, quietly = TRUE)) {
-      message("Package Version (", pkg_name, "): ", as.character(utils::packageVersion(pkg_name)))
+    # --- Determine package name and version RELIABLY ---
+    # utils::packageName() gets the name of the currently running package
+    pkg_name_env <- try(utils::packageName(), silent = TRUE) # Use default env
+    
+    # Fallback if packageName() fails (e.g., during devtools::load_all sometimes)
+    if (inherits(pkg_name_env, "try-error") || is.null(pkg_name_env)) {
+      pkg_name <- "biodiscvr" # Hardcoded fallback - REPLACE with your actual package name
+      message("Package Version (", pkg_name, "): Could not determine dynamically (using fallback name).")
     } else {
-      message("Package (", pkg_name, "): Not found in library path (might be loaded via devtools).")
+      pkg_name <- pkg_name_env
+      # Get version using the determined name
+      pkg_version_str <- try(as.character(utils::packageVersion(pkg_name)), silent = TRUE)
+      if (inherits(pkg_version_str, "try-error")) {
+        message("Package Version (", pkg_name, "): Could not determine version.")
+      } else {
+        message("Package Version (", pkg_name, "): ", pkg_version_str)
+      }
     }
-    message("Loaded Datasets: ", paste(names(loaded_data), collapse=", "))
+    # --- End package name/version block ---
+    
+    # loaded_data needs to be defined in the scope where this is called
+    if(exists("loaded_data") && is.list(loaded_data)){
+      message("Loaded Datasets (Input): ", paste(names(loaded_data), collapse=", "))
+    } else if (exists("dataset_name") && is.character(dataset_name)) {
+      message("Processing Dataset: ", dataset_name) # For single dataset context
+    }
     message("--------------------\n")
   }
-  
   
   # --- Input Validation ---
   if (!is.list(loaded_data)) stop("Input 'loaded_data' must be a list.")

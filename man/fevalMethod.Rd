@@ -20,19 +20,17 @@ fevalMethod(
 'value', 'time', 'ID', 'DX' (0=CU, 1=CI), 'AB' (Amyloid status T/F).
 The 'value' column contains the biomarker measurement to be modeled.}
 
+\item{group}{Character string. The group ("CU" or "CI") whose specific data
+characteristics will be used for the primary fitness evaluation by the
+internal \code{.calculate_fitness} function.}
+
 \item{eq_all}{Formula. The formula for the overall separation model (e.g.,
 \code{value ~ time*DX + (time|ID)}). Must include a \code{time:DX} interaction.}
 
 \item{eq_group}{Formula. The formula for the within-group models (e.g.,
 \code{value ~ time + (time|ID)}).}
 
-\item{calculate_ci}{Logical. If \code{TRUE}, calculate and return bootstrap
-confidence intervals for repeatability and separation metrics. Defaults to \code{FALSE}.}
-
-\item{nsim}{Integer. Number of bootstrap simulations to run if \code{calculate_ci}
-is \code{TRUE}. Defaults to 100. Be mindful that higher values increase runtime significantly.}
-
-\item{power_params}{List. Parameters for \code{longpower::lmmpower} containing:
+\item{all_power_params}{List. Parameters for \code{longpower::lmmpower} containing:
 \describe{
 \item{pct_change_ci}{Percent change for power calculation in CI group.}
 \item{t_ci}{Time points for power calculation in CI group (e.g., \code{c(0, 1.5)}).}
@@ -41,6 +39,14 @@ is \code{TRUE}. Defaults to 100. Be mindful that higher values increase runtime 
 \item{t_cu}{Time points for power calculation in CU group (e.g., \code{c(0, 4.5)}).}
 \item{power_cu}{Desired power level for CU group (e.g., 0.80).}
 }}
+
+\item{lmer_control}{Control object for lmer fitting.}
+
+\item{calculate_ci}{Logical. If \code{TRUE}, calculate and return bootstrap
+confidence intervals for repeatability and separation metrics. Defaults to \code{FALSE}.}
+
+\item{nsim}{Integer. Number of bootstrap simulations to run if \code{calculate_ci}
+is \code{TRUE}. Defaults to 100. Be mindful that higher values increase runtime significantly.}
 }
 \value{
 A named numeric vector containing the evaluation metrics.

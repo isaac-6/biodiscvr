@@ -3,6 +3,8 @@
 
 #' Number of CVR combinations given a number of regions to choose from
 #' It considers A/B equivalent to B/A. 
+#' @param x number of regions to choose from
+#' @noRd
 .combos <- function(x) {
   (3^x-3*2^x+3)/6
 }

@@ -329,11 +329,14 @@
 #' @param data Data frame. The input data, expected to contain columns like
 #'   'value', 'time', 'ID', 'DX' (0=CU, 1=CI), 'AB' (Amyloid status T/F).
 #'   The 'value' column contains the biomarker measurement to be modeled.
+#' @param group Character string. The group ("CU" or "CI") whose specific data
+#'   characteristics will be used for the primary fitness evaluation by the
+#'   internal `.calculate_fitness` function.
 #' @param eq_all Formula. The formula for the overall separation model (e.g.,
 #'   `value ~ time*DX + (time|ID)`). Must include a `time:DX` interaction.
 #' @param eq_group Formula. The formula for the within-group models (e.g.,
 #'   `value ~ time + (time|ID)`).
-#' @param power_params List. Parameters for `longpower::lmmpower` containing:
+#' @param all_power_params List. Parameters for `longpower::lmmpower` containing:
 #'   \describe{
 #'     \item{pct_change_ci}{Percent change for power calculation in CI group.}
 #'     \item{t_ci}{Time points for power calculation in CI group (e.g., `c(0, 1.5)`).}
@@ -342,6 +345,7 @@
 #'     \item{t_cu}{Time points for power calculation in CU group (e.g., `c(0, 4.5)`).}
 #'     \item{power_cu}{Desired power level for CU group (e.g., 0.80).}
 #'   }
+#' @param lmer_control Control object for lmer fitting.
 #' @param calculate_ci Logical. If `TRUE`, calculate and return bootstrap
 #'   confidence intervals for repeatability and separation metrics. Defaults to `FALSE`.
 #' @param nsim Integer. Number of bootstrap simulations to run if `calculate_ci`

@@ -64,6 +64,10 @@ bilateral regions (logged in the output). Defaults to TRUE.}
 \item{experiment_tag}{Character string or NULL. An optional tag to identify this
 specific run/experiment batch in the output CSV.}
 
+\item{output_csv_name}{Character string or NULL. If provided, the full path
+to a CSV file where the single result row for this run will be appended.
+Handles header creation automatically. Directory will be created if needed.}
+
 \item{save_plot}{Boolean, to choose if a plot of the search is saved (fitness vs generation)}
 
 \item{output_dir}{Path to the output folder (to save csv, and plots)}
@@ -73,10 +77,6 @@ for reproducibility. If NULL, a random seed is used.}
 
 \item{...}{Additional arguments passed directly to the underlying GA function
 (e.g., \code{GA::ga}).}
-
-\item{output_csv_path}{Character string or NULL. If provided, the full path
-to a CSV file where the single result row for this run will be appended.
-Handles header creation automatically. Directory will be created if needed.}
 }
 \value{
 A single-row data frame containing the results for the best solution

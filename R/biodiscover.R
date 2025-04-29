@@ -31,7 +31,7 @@
 #'   bilateral regions (logged in the output). Defaults to TRUE.
 #' @param experiment_tag Character string or NULL. An optional tag to identify this
 #'   specific run/experiment batch in the output CSV.
-#' @param output_csv_path Character string or NULL. If provided, the full path
+#' @param output_csv_name Character string or NULL. If provided, the full path
 #'   to a CSV file where the single result row for this run will be appended.
 #'   Handles header creation automatically. Directory will be created if needed.
 #' @param save_plot Boolean, to choose if a plot of the search is saved (fitness vs generation)
