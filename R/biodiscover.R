@@ -85,7 +85,7 @@
 #' @importFrom dplyr left_join select all_of filter 
 #' @importFrom stats na.omit as.formula setNames sd residuals coef quantile 
 #' @importFrom rlang `%||%` .data sym 
-#' @importFrom methods is slotNames 
+#' @importFrom methods is 
 biodiscvr_single <- function(dataset_data,
                              dataset_name,
                              group,

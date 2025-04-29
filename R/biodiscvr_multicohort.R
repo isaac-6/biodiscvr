@@ -78,7 +78,7 @@
 #' @importFrom dplyr left_join select all_of filter bind_rows
 #' @importFrom stats na.omit as.formula setNames sd residuals coef quantile median weighted.mean
 #' @importFrom rlang `%||%` .data sym is_scalar_character 
-#' @importFrom methods is slotNames
+#' @importFrom methods is
 #' @importFrom utils sessionInfo installed.packages packageName
 biodiscvr_multicohort <- function(preprocessed_data,
                                   datasets_to_run,

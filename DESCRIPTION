@@ -29,4 +29,5 @@ Imports:
     longpower,
     readr,
     rlang,
-    yaml
+    yaml,
+    methods

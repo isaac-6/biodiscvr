@@ -161,7 +161,7 @@
 #' @importFrom lme4 lmer lmerControl bootMer
 #' @importFrom longpower lmmpower
 #' @importFrom stats sd residuals coef quantile setNames na.omit
-#' @importFrom methods is slotNames
+#' @importFrom methods is
 #'
 #' @param data Data frame containing prepared modeling data...
 #' @param group Character string, either "CU" or "CI".
@@ -372,7 +372,6 @@
 #' @importFrom lme4 lmer lmerControl bootMer
 #' @importFrom longpower lmmpower
 #' @importFrom stats sd residuals coef quantile
-#' @importFrom methods slotNames
 fevalMethod <- function(data, group, eq_all, eq_group, all_power_params, lmer_control, calculate_ci = FALSE, nsim = 1000) {
   
   # Basic input type validation
