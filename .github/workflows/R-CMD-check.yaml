@@ -1,0 +1,89 @@
+# Workflow for running R CMD check on the package
+# Based on https://github.com/r-lib/actions/tree/v2/examples
+# Name of the workflow
+name: R-CMD-check
+
+# Controls when the action will run.
+# Trigger the workflow on push or pull request events but only for the main/master branch
+on:
+  push:
+    branches: [ main, master ] # Adjust if your main branch has a different name
+  pull_request:
+    branches: [ main, master ] # Adjust if your main branch has a different name
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  R-CMD-check:
+    # The type of runner that the job will run on
+    runs-on: ${{ matrix.config.os }} # Run on different OS specified in matrix
+
+    # Define strategy for matrix build (different OS and R versions)
+    strategy:
+      fail-fast: false # Don't cancel all jobs if one fails
+      matrix:
+        config:
+          # Test on latest release version of R on all major OSs
+          - { os: windows-latest, r: 'release' }
+          - { os: macOS-latest,   r: 'release' }
+          - { os: ubuntu-latest,  r: 'release' }
+          # Optionally, test on R-devel (unstable development version)
+          # - { os: ubuntu-latest,  r: 'devel', http-user-agent: 'release' } # Use release user-agent for devel
+          # Optionally, test on an older version
+          # - { os: ubuntu-latest, r: 'oldrel-1'} # E.g., previous minor release
+
+    # Define environment variables for the job
+    env:
+      # Prevent R CMD check errors from ansi colors in log files
+      R_CLI_NUM_COLORS: 0
+      # Avoid certain CRAN checks that may fail in CI
+      _R_CHECK_CRAN_INCOMING_: false
+      # Make sure warnings during dependency installation don't become errors
+      R_REMOTES_NO_ERRORS_FROM_WARNINGS: true
+      # Set a cache key version number - bump this to invalidate cache
+      R_LIBS_CACHE_VERSION: 1
+      # Set timezone to avoid potential locale issues in tests/examples
+      TZ: Etc/UTC
+
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # 1. Check-out repository code so the workflow can access it
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Set up R environment
+      - name: Setup R (${{ matrix.config.r }})
+        uses: r-lib/actions/setup-r@v2
+        with:
+          r-version: ${{ matrix.config.r }}
+          # Use pak for faster dependency installation
+          use-public-rspm: true # Use RStudio Public Package Manager for binaries if possible
+          # http-user-agent: ${{ matrix.config.http-user-agent || format('R/{0}/actions-{1}', matrix.config.r, github.run_id) }}
+
+      # 3. Set up pak for package installation caching
+      - name: Setup pak
+        uses: r-lib/actions/setup-pak@v2
+        with:
+          # Cache packages based on OS, R version, cache version env var, and lockfile hash
+          cache-version: ${{ env.R_LIBS_CACHE_VERSION }}
+
+      # 4. Install package dependencies
+      #    pak::pkg_install will install all dependencies from DESCRIPTION
+      #    (Imports, Depends, LinkingTo, Suggests)
+      - name: Install dependencies
+        run: |
+          pak::pkg_install(dependencies = TRUE)
+          pak::local_install_dev_deps(upgrade = TRUE) # Installs deps needed for check/tests
+        shell: Rscript {0}
+
+      # 5. Run R CMD check
+      #    Uses the rcmdcheck package to run the check and report results
+      - name: Run R CMD check
+        uses: r-lib/actions/check-r-package@v2
+        with:
+          # Arguments passed to rcmdcheck::rcmdcheck()
+          args: "--no-manual --as-cran --timings"
+          # What should cause an error? "error", "warning", or "note"
+          error-on: "warning" # Fail on errors and warnings (good starting point)
+          # Check directory (where the package source is)
+          # check-dir: "check" # Optional: Subdirectory for check output

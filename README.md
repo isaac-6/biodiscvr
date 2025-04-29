@@ -9,8 +9,8 @@
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- Uncomment and update these if/when applicable -->
 <!-- [![CRAN status](https://www.r-pkg.org/badges/version/biodiscvr)](https://CRAN.R-project.org/package=biodiscvr) -->
-<!-- [![R-CMD-check](https://github.com/[YOUR_GITHUB_USERNAME]/[YOUR_REPO_NAME]/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/[YOUR_GITHUB_USERNAME]/[YOUR_REPO_NAME]/actions/workflows/R-CMD-check.yaml) -->
-<!-- [![Codecov test coverage](https://codecov.io/gh/[YOUR_GITHUB_USERNAME]/[YOUR_REPO_NAME]/branch/main/graph/badge.svg)](https://app.codecov.io/gh/[YOUR_GITHUB_USERNAME]/[YOUR_REPO_NAME]?branch=main) -->
+<!-- [![R-CMD-check](https://github.com/isaac-6/biodiscvr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/isaac-6/biodiscvr/actions/workflows/R-CMD-check.yaml) -->
+<!-- [![Codecov test coverage](https://codecov.io/gh/isaac-6/biodiscvr/branch/main/graph/badge.svg)](https://app.codecov.io/gh/isaac-6/biodiscvr?branch=main) -->
 [![License: GPL
 v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 <!-- badges: end -->
@@ -51,16 +51,15 @@ The package includes functions to handle the workflow:
 ## Installation
 
 You can install the development version of `biodiscvr` from
-[GitHub](https://github.com/%5BYOUR_GITHUB_USERNAME%5D/%5BYOUR_REPO_NAME%5D)
-with:
+[GitHub](https://github.com/isaac-6/biodiscvr) with:
 
 ``` r
 # install.packages("devtools") # If you don't have devtools installed
-devtools::install_github("[YOUR_GITHUB_USERNAME]/[YOUR_REPO_NAME]")
+devtools::install_github("isaac-6/biodiscvr")
 
 # Or using the 'remotes' package:
 # install.packages("remotes")
-# remotes::install_github("[YOUR_GITHUB_USERNAME]/[YOUR_REPO_NAME]")
+# remotes::install_github("isaac-6/biodiscvr")
 ```
 
 **Note:** You may need Rtools (Windows) or Xcode Command Line Tools
