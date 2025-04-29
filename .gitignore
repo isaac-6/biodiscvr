@@ -1,0 +1,10 @@
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+logs/
+.logs/
+auxcode/
+output/
+*.Rproj
+data/

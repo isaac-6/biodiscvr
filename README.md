@@ -1,0 +1,207 @@
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+# biodiscvr: Biomarker Discovery Using Composite Value Ratios
+
+<!-- badges: start -->
+
+[![Lifecycle:
+experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- Uncomment and update these if/when applicable -->
+<!-- [![CRAN status](https://www.r-pkg.org/badges/version/biodiscvr)](https://CRAN.R-project.org/package=biodiscvr) -->
+<!-- [![R-CMD-check](https://github.com/[YOUR_GITHUB_USERNAME]/[YOUR_REPO_NAME]/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/[YOUR_GITHUB_USERNAME]/[YOUR_REPO_NAME]/actions/workflows/R-CMD-check.yaml) -->
+<!-- [![Codecov test coverage](https://codecov.io/gh/[YOUR_GITHUB_USERNAME]/[YOUR_REPO_NAME]/branch/main/graph/badge.svg)](https://app.codecov.io/gh/[YOUR_GITHUB_USERNAME]/[YOUR_REPO_NAME]?branch=main) -->
+[![License: GPL
+v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+<!-- badges: end -->
+
+## Overview
+
+`biodiscvr` provides a framework for discovering and evaluating novel or
+optimized biomarkers defined as ratios of composite values derived from
+feature sets (e.g., regional measurements from imaging data). It is
+particularly suited for analyzing longitudinal multi-cohort datasets.
+
+The core functionality utilizes a Genetic Algorithm (GA) to search the
+feature space for optimal numerator and denominator combinations that
+optimise specific biomarker performance metrics. These metrics are
+calculated using linear mixed-effects models and typically include:
+
+- **Repeatability:** Error percentage (`Rep`), calculated as the
+  standard deviation of model residuals (data is log-transformed).
+- **Group Separation:** T-statistics comparing biomarker slopes or
+  changes between groups (e.g., `SepAB` for amyloid effect).
+- **Statistical Power:** Sample Size Estimates (`SSE`) required to
+  detect a certain effect size, calculated using the `longpower`
+  package.
+
+The package includes functions to handle the workflow:
+
+1.  Loading data from structured directories (`load_datasets`).
+2.  Checking data integrity and preparing it based on configuration
+    files (`check_and_prepare_data`).
+3.  Preprocessing datasets based on inclusion/exclusion criteria
+    (`preprocess_datasets`).
+4.  Running the GA-based discovery process for single datasets
+    (`biodiscvr_single`).
+5.  \[To do: Add function for evaluating a fixed biomarker across
+    datasets if created\].
+6.  Logging results to CSV files and generating convergence plots.
+
+## Installation
+
+You can install the development version of `biodiscvr` from
+[GitHub](https://github.com/%5BYOUR_GITHUB_USERNAME%5D/%5BYOUR_REPO_NAME%5D)
+with:
+
+``` r
+# install.packages("devtools") # If you don't have devtools installed
+devtools::install_github("[YOUR_GITHUB_USERNAME]/[YOUR_REPO_NAME]")
+
+# Or using the 'remotes' package:
+# install.packages("remotes")
+# remotes::install_github("[YOUR_GITHUB_USERNAME]/[YOUR_REPO_NAME]")
+```
+
+**Note:** You may need Rtools (Windows) or Xcode Command Line Tools
+(macOS) installed for package development dependencies. The installation
+will also attempt to install packages listed under `Imports` in the
+DESCRIPTION file (like `yaml`, `readr`, `dplyr`, `lme4`, `longpower`,
+`GA`, `rlang`).
+
+## Basic Usage Example
+
+Here’s a conceptual example demonstrating a typical call to the
+single-dataset discovery function. *Note: This example uses `eval=FALSE`
+as running it requires specific data setup, configuration files, and
+potentially significant computation time (about 1 second per GA
+generation, with a 12th gen Intel CPU).*
+
+``` r
+# Load the package
+# library(biodiscvr) # Replace with your package name
+
+# --- Prerequisites (Conceptual - These steps require setup) ---
+
+# 1. Load datasets (replace path)
+# loaded_data_list <- load_datasets(root_path = "path/to/your/data/root")
+
+# 2. Check and prepare data (replace paths, uses config.yaml, dict_suv.csv)
+# checked_output <- check_and_prepare_data(
+#   loaded_data = loaded_data_list,
+#   files_path = "path/to/your/files_folder", # Where dicts and config live
+#   config_filename = "config.yaml",
+#   log_directory = "path/to/your/log_folder"
+# )
+# config <- checked_output$config
+# data_list <- checked_output$data # Renamed/checked data
+
+# 3. Preprocess data (using config settings)
+# preprocessed_data_list <- preprocess_datasets(
+#   checked_data = checked_output,
+#   verbose = TRUE
+# )
+
+# --- Example Call to biodiscvr_single ---
+# (Assuming the above steps have produced preprocessed_data_list and config)
+
+# Select data for one dataset
+# target_dataset_data <- preprocessed_data_list$ADNI # Example
+
+# Define parameters (often from config or set directly)
+# target_group <- "CI" # Group to evaluate fitness for
+# output_csv <- "results/discovery_results.csv"
+# plot_dir <- "results/plots"
+# experiment_id <- "run_01_baseline"
+# composition_method <- 1 # Example: Passed to internal fitness func
+
+# Define features (example - using all numeric from SUV data)
+# id_col <- config$preprocessing$id_column %||% "RID"
+# features_to_use <- setdiff(names(target_dataset_data$data_suv_bi), id_col)
+
+# --- Conceptual Call (won't run due to GA and fitness function complexity) ---
+```
+
+``` r
+# Conceptual call - requires data setup and implemented fitness function
+# Assume config and target_dataset_data exist from steps above
+
+discovery_result_df <- biodiscvr_single(
+  dataset_data = target_dataset_data,
+  dataset_name = "ADNI", # Name for logging
+  group = target_group,
+  config = config,
+  features = features_to_use,
+  var_composition = composition_method,
+  bilateral = TRUE, # Example metadata
+  experiment_tag = experiment_id,
+  output_csv_path = output_csv, # Set path to save results
+  output_plot_dir = plot_dir, # Set path to save plot
+  save_plot = TRUE, # Control plot saving
+  ga_seed = 42 # For reproducibility
+  # Add other GA parameters if needed (passed via ...)
+)
+
+# Inspect the results data frame (if run succeeded)
+# print(discovery_result_df)
+```
+
+*Why `eval=FALSE`?* The code above demonstrates the function call
+structure but doesn’t execute because running the GA
+(`biodiscvr_single`) requires correctly formatted input data,
+configuration files, and the specific implementation details within the
+internal `.calculate_fitness` function, which are beyond the scope of a
+simple README example. Please refer to the package vignettes for
+detailed walkthroughs.
+
+## Features
+
+- **Configurable Workflow:** Control preprocessing, modeling, and GA
+  parameters via YAML configuration files.
+- **Multi-Cohort Handling:** Load, preprocess, and discover biomarkers
+  within multiple datasets stored in a structured directory format.
+- **GA-Based Optimization:** Employs a Genetic Algorithm (`GA` package)
+  to search for optimal feature combinations (numerators/denominators)
+  defining the biomarker ratio, based on a custom fitness function.
+- **LME-Based Evaluation:** Uses linear mixed-effects models (`lme4`
+  package) internally to calculate key performance metrics
+  (Repeatability, Separation, Sample Size Estimates via `longpower`).
+- **Group-Specific Analysis:** Optimize and evaluate metrics
+  specifically for defined clinical groups (e.g., CU vs. CI).
+- **Results Logging:** Append detailed results from discovery runs to a
+  structured CSV file.
+- **Convergence Plotting:** Optionally save GA convergence plots.
+
+## Learning More
+
+The best way to learn how to use the `biodiscvr` package is by reading
+the package vignettes, which provide detailed examples and explanations
+of the workflow:
+
+- **Getting Started:**
+  `vignette("getting-started", package = "biodiscvr")` (Replace
+  `"getting-started"` with your actual main vignette name)
+- **Configuration Details:**
+  `vignette("configuration-details", package = "biodiscvr")` (Replace
+  `"configuration-details"` with your config vignette name, if you
+  create one)
+
+## Citation
+
+If you use `biodiscvr` in your research, please cite it. You can get the
+citation information by running:
+
+``` r
+citation("biodiscvr") # Replace biodiscvr with your package name
+```
+
+## Contributing
+
+Please note that the ‘biodiscvr’ project is released with a Contributor
+Code of Conduct. By contributing to this project, you agree to abide by
+its terms.
+
+## License
+
+This package is licensed under the GPL v3 License. See the
+[LICENSE](LICENSE.md) file for details.

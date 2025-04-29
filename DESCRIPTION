@@ -1,0 +1,24 @@
+Package: biodiscvr
+Title: Biomarker Discovery Using Composite Value Ratios
+Version: 0.0.0.9000
+Authors@R: 
+    person("Isaac", "Llorente-Saguer", , "illorentes@gmail.com", role = c("aut", "cre"))
+Description: Provides tools for discovering and evaluating biomarkers derived
+    from ratios of composite feature sets (e.g., regional imaging measurements).
+    Implements a Genetic Algorithm (GA) based search to optimize feature
+    selection for numerator and denominator components based on performance
+    metrics like repeatability, group separation, and sample size estimates
+    calculated using linear mixed-effects models. Includes functions for
+    multi-cohort data preprocessing, configuration, and results logging.
+License: GPL (>= 3)
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.2
+Imports: 
+    dplyr,
+    GA,
+    lme4,
+    longpower,
+    readr,
+    rlang,
+    yaml
