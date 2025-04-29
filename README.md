@@ -13,6 +13,7 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 <!-- [![Codecov test coverage](https://codecov.io/gh/isaac-6/biodiscvr/branch/main/graph/badge.svg)](https://app.codecov.io/gh/isaac-6/biodiscvr?branch=main) -->
 [![License: GPL
 v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![R-CMD-check](https://github.com/isaac-6/biodiscvr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/isaac-6/biodiscvr/actions/workflows/R-CMD-check.yaml)
 <!-- badges: end -->
 
 ## Overview
