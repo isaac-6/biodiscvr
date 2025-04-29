@@ -525,7 +525,7 @@ biodiscvr_multicohort <- function(preprocessed_data,
         
       }, error = function(e) {
         warning(sprintf("Dataset '%s', Group '%s': Failed to save GA plot to '%s'. Error: %s",
-                        dataset_name, group, full_plot_path, conditionMessage(e)), call. = FALSE)
+                        paste(datasets_to_run, collapse="."), group, full_plot_path, conditionMessage(e)), call. = FALSE)
         # Ensure device is closed if error occurred after opening but before dev.off()
         if (grDevices::dev.cur() != 1L) try(grDevices::dev.off(), silent=TRUE) # Use try() for safety
       }) # End tryCatch
@@ -634,7 +634,7 @@ biodiscvr_multicohort <- function(preprocessed_data,
       
       # --- Get final metrics using .feval_group ---
       if(nrow(current_dset_data$data) < 10 || sum(current_dset_data$data$DX == (if(group=="CI") 1L else 0L)) < 5 ) { # Check group size too
-        warning(sprintf("Dataset '%s', Group '%s': Not enough final data rows (%d) or group members to calculate metrics reliably.", dataset_name, group, nrow(final_data)), call.=FALSE)
+        warning(sprintf("Dataset '%s', Group '%s': Not enough final data rows (%d) or group members to calculate metrics reliably.", paste(datasets_to_run, collapse="."), group, nrow(current_dset_data$data)), call.=FALSE)
         metrics <- stats::setNames(rep(NA_real_, 3), c("Rep", "SepAB", "SSE"))
       } else {
         metrics <- .feval_group(

@@ -492,7 +492,7 @@ biodiscvr_single <- function(dataset_data,
     
     # --- Get final metrics using .feval_group ---
     if(nrow(dataset_data$data) < 10 || sum(dataset_data$data$DX == (if(group=="CI") 1L else 0L)) < 5 ) { # Check group size too
-      warning(sprintf("Dataset '%s', Group '%s': Not enough final data rows (%d) or group members to calculate metrics reliably.", dataset_name, group, nrow(final_data)), call.=FALSE)
+      warning(sprintf("Dataset '%s', Group '%s': Not enough final data rows (%d) or group members to calculate metrics reliably.", dataset_name, group, nrow(dataset_data$data)), call.=FALSE)
       final_metrics <- stats::setNames(rep(NA_real_, 3), c("Rep", "SepAB", "SSE"))
     } else {
       final_metrics <- .feval_group(

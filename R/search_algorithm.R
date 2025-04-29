@@ -268,7 +268,7 @@
   
   # --- 2. Get evaluation metrics ---
   # We don't need CIs for every fitness evaluation
-  # Note: fevalMethod expects 'value', 'time', 'ID', 'DX', 'AB' columns
+  # Note: data expects 'value', 'time', 'ID', 'DX', 'AB' columns
   # Ensure 'time' is appropriately defined/scaled in main_data
   metrics <- try(.feval_group(data = main_data,
                               group,
@@ -279,7 +279,7 @@
                  silent = TRUE)
   
   if (inherits(metrics, "try-error") || anyNA(metrics)) {
-    warning("fevalMethod failed or returned NA during fitness calculation. Returning poor fitness.", call. = FALSE)
+    warning(".feval_group failed or returned NA during fitness calculation. Returning poor fitness.", call. = FALSE)
     return(-Inf)
   }
   
@@ -292,7 +292,7 @@
     tsep = metrics["SepAB"][[1]]
   }
   fitness_score <- tsep / metrics["SSE"][[1]]
-  # Handle potential NA values from fevalMethod if they weren't caught
+  # Handle potential NA values from .feval_group if they weren't caught
   if(is.na(fitness_score)) fitness_score <- -Inf
   
   return(fitness_score)
@@ -569,7 +569,7 @@ calculate_reference_direction <- function(reference_dna,
     }
     
     if (!is.null(sse_data) && nrow(sse_data) > 5) { # Need sufficient data
-      sse_model <- try(lme4::lmer(sse_eq_group, data = sse_data, REML = TRUE, control = lmer_control), silent = TRUE)
+      sse_model <- try(lme4::lmer(eq_group, data = sse_data, REML = TRUE, control = lmer_control), silent = TRUE)
       
       if (!inherits(sse_model, "try-error")) {
         pow_sse <- try(longpower::lmmpower(sse_model, # Correct package name
