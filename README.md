@@ -110,10 +110,12 @@ generation, with a 12th gen Intel CPU).*
 
 # Define parameters (often from config or set directly)
 # target_group <- "CI" # Group to evaluate fitness for
-# output_csv <- "results/discovery_results.csv"
-# plot_dir <- "results/plots"
+# output_csv_name <- "discovery_results"
+# output_dir <- "results"
 # experiment_id <- "run_01_baseline"
-# composition_method <- 1 # Example: Passed to internal fitness func
+# composition_method <- 1 # (Only 1 -arithmetic mean- implemented and tested. 
+# If there is demand for it, it can be updated with other compositions, 
+# such as a weighted mean)
 
 # Define features (example - using all numeric from SUV data)
 # id_col <- config$preprocessing$id_column %||% "RID"
@@ -131,12 +133,14 @@ discovery_result_df <- biodiscvr_single(
   dataset_name = "ADNI", # Name for logging
   group = target_group,
   config = config,
-  features = features_to_use,
+  features = features_to_use, # can leave empty if all features from data_suv_bi
+  fixed_numerator_regs = NULL, # optional predefinition of fixed regions
+  fixed_denominator_regs = NULL, # optional predefinition of fixed regions
   var_composition = composition_method,
   bilateral = TRUE, # Example metadata
   experiment_tag = experiment_id,
-  output_csv_path = output_csv, # Set path to save results
-  output_plot_dir = plot_dir, # Set path to save plot
+  output_csv_name = output_csv, # Set path to save results
+  output_dir = output_dir, # Set path to save csv results and plot
   save_plot = TRUE, # Control plot saving
   ga_seed = 42 # For reproducibility
   # Add other GA parameters if needed (passed via ...)
@@ -151,8 +155,7 @@ structure but doesn’t execute because running the GA
 (`biodiscvr_single`) requires correctly formatted input data,
 configuration files, and the specific implementation details within the
 internal `.calculate_fitness` function, which are beyond the scope of a
-simple README example. Please refer to the package vignettes for
-detailed walkthroughs.
+simple README example.
 
 ## Features
 
@@ -172,19 +175,13 @@ detailed walkthroughs.
   structured CSV file.
 - **Convergence Plotting:** Optionally save GA convergence plots.
 
-## Learning More
+## References
 
-The best way to learn how to use the `biodiscvr` package is by reading
-the package vignettes, which provide detailed examples and explanations
-of the workflow:
-
-- **Getting Started:**
-  `vignette("getting-started", package = "biodiscvr")` (Replace
-  `"getting-started"` with your actual main vignette name)
-- **Configuration Details:**
-  `vignette("configuration-details", package = "biodiscvr")` (Replace
-  `"configuration-details"` with your config vignette name, if you
-  create one)
+This package builds upon the methodologies described in: -
+Llorente-Saguer, I. et al. (2024). *A data-driven framework for
+biomarker discovery applied to optimizing modern clinical and
+preclinical trials on Alzheimer’s disease*. Brain Communications, Volume
+6, Issue 6. doi.org/10.1093/braincomms/fcae438
 
 ## Citation
 
@@ -192,7 +189,7 @@ If you use `biodiscvr` in your research, please cite it. You can get the
 citation information by running:
 
 ``` r
-citation("biodiscvr") # Replace biodiscvr with your package name
+citation("biodiscvr")
 ```
 
 ## Contributing
