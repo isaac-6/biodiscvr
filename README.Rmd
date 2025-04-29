@@ -14,16 +14,14 @@ knitr::opts_chunk$set(
 )
 # Placeholder to prevent errors if package isn't installed during README build
 # In a real scenario, you might load the package if testing examples
-# try(library(biodiscvr), silent = TRUE) # Replace biodiscvr with your package name
+# try(library(biodiscvr), silent = TRUE)
 ```
 
 # biodiscvr: Biomarker Discovery Using Composite Value Ratios
 
 <!-- badges: start -->
 [![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-<!-- Uncomment and update these if/when applicable -->
 <!-- [![CRAN status](https://www.r-pkg.org/badges/version/biodiscvr)](https://CRAN.R-project.org/package=biodiscvr) -->
-<!-- [![R-CMD-check](https://github.com/isaac-6/biodiscvr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/isaac-6/biodiscvr/actions/workflows/R-CMD-check.yaml) -->
 <!-- [![Codecov test coverage](https://codecov.io/gh/isaac-6/biodiscvr/branch/main/graph/badge.svg)](https://app.codecov.io/gh/isaac-6/biodiscvr?branch=main) -->
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![R-CMD-check](https://github.com/isaac-6/biodiscvr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/isaac-6/biodiscvr/actions/workflows/R-CMD-check.yaml)
@@ -131,7 +129,7 @@ discovery_result_df <- biodiscvr_single(
   var_composition = composition_method,
   bilateral = TRUE, # Example metadata
   experiment_tag = experiment_id,
-  output_csv_name = output_csv, # Set path to save results
+  output_csv_name = output_csv, # results file name
   output_dir = output_dir, # Set path to save csv results and plot
   save_plot = TRUE, # Control plot saving
   ga_seed = 42 # For reproducibility
