@@ -8,4 +8,4 @@ auxcode/
 output/
 *.Rproj
 data/
-files/
+files/dict_suv_old.csv
