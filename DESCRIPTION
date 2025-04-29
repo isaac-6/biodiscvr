@@ -4,7 +4,6 @@ Version: 0.0.0.9000
 Date: 2025
 Authors@R: 
     person("Isaac", "Llorente-Saguer", , "illorentes@gmail.com", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-7612-5331"))
-
 Description: Provides tools for discovering and evaluating biomarkers derived
     from ratios of composite feature sets (e.g., regional imaging measurements).
     Implements a Genetic Algorithm (GA) based search to optimize feature
@@ -15,7 +14,7 @@ Description: Provides tools for discovering and evaluating biomarkers derived
     This package builds upon the methodologies described in 
     "A data-driven framework for biomarker discovery applied to 
     optimizing modern clinical and preclinical trials on Alzheimer’s disease"
-    (Llorente-Saguer, I. et al., 2024, Brain Communications)
+    (Llorente-Saguer, I. et al., 2024, Brain Communications).
 License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
