@@ -179,7 +179,7 @@ This package builds upon the methodologies described in: -
 Llorente-Saguer, I. et al. (2024). *A data-driven framework for
 biomarker discovery applied to optimizing modern clinical and
 preclinical trials on Alzheimer’s disease*. Brain Communications, Volume
-6, Issue 6. doi.org/10.1093/braincomms/fcae438
+6, Issue 6. [doi](doi.org/10.1093/braincomms/fcae438)
 
 ## Citation
 
