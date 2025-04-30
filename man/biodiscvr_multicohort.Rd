@@ -14,7 +14,7 @@ biodiscvr_multicohort(
   fixed_denominator_regs = NULL,
   min_bounds = NULL,
   max_bounds = NULL,
-  var_composition,
+  var_composition = 1,
   reference_fitness = NULL,
   bilateral = TRUE,
   experiment_tag = NULL,

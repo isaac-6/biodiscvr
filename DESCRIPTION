@@ -30,4 +30,7 @@ Imports:
     readr,
     rlang,
     yaml,
-    methods
+    methods,
+    utils,
+    stats,
+    dplyr
