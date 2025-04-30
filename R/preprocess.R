@@ -123,7 +123,7 @@ preprocess_data <- function(loaded_data,
       # Optional: Warn if closing failed (might indicate external interference)
       # if(!sink_closed_ok && interactive()) warning("on.exit: Attempt to close message sink failed.", call. = FALSE)
     }
-    if (!is.null(log_con) && methods::inherits(log_con, "connection") && isOpen(log_con)) {
+    if (!is.null(log_con) && inherits(log_con, "connection") && isOpen(log_con)) {
       try({
         cat(sprintf("[%s] --- Log End ---\n", format(Sys.time(), "%Y-%m-%d %H:%M:%S")), file = log_con, append = TRUE)
         close(log_con)
