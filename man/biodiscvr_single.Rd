@@ -14,7 +14,7 @@ biodiscvr_single(
   fixed_denominator_regs = NULL,
   min_bounds = NULL,
   max_bounds = NULL,
-  var_composition,
+  var_composition = 1,
   bilateral = TRUE,
   experiment_tag = NULL,
   output_csv_name = NULL,

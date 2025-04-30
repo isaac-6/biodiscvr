@@ -95,7 +95,7 @@ biodiscvr_single <- function(dataset_data,
                              fixed_denominator_regs = NULL,
                              min_bounds = NULL,
                              max_bounds = NULL,
-                             var_composition, 
+                             var_composition = 1, # default to mean
                              bilateral = TRUE,
                              experiment_tag = NULL,
                              output_csv_name = NULL, # Optional CSV logging
@@ -280,6 +280,18 @@ biodiscvr_single <- function(dataset_data,
       stop(sprintf("GA bounds dimensions (%d, %d) do not match expected n_vars (%d)", length(min_bounds), length(max_bounds), n_vars))
     }
   }
+  
+  # --- Constrain literature-based regions ---
+  # This can avoid having two directions of well-performing biomarkers,
+  # although the fact that a negative t is currently penalised makes it redundant.
+  # This future-proofs other fitness metrics, like focusing on SSE alone.
+  aux_t <- c("entorhinal", "amygdala", "superiortemporal")
+  max_bounds[features %in% aux_t] <- 1.9
+  
+  aux_r <- c("brainstem", "hemiwm", "whole_cerebellum", "cerebellum_cortex", "inferior_cerebgm")
+  min_bounds[features %in% aux_r] <- 1.1
+  
+  rm(aux_t, aux_r)
   
   # --- Prepare other shared data ---
   data_clinical <- dataset_data$data

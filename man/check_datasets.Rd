@@ -2,7 +2,7 @@
 % Please edit documentation in R/check_datasets.R
 \name{check_datasets}
 \alias{check_datasets}
-\title{Check Data Structure, Prepare, and Log Issues to Timestamped File}
+\title{Check Data Structure, Prepare SUV Data, and Log Issues}
 \usage{
 check_datasets(
   loaded_data,
@@ -16,16 +16,16 @@ check_datasets(
 )
 }
 \arguments{
-\item{loaded_data}{The list object returned by \code{load_datasets()}. Expected
+\item{loaded_data}{List. The output from \code{load_datasets()}. Expected
 to be a named list where each element is a dataset (itself a list
 containing data frames like 'data' and 'data_suv_bi').}
 
-\item{files_path}{Character string. Path to directory containing supporting
-files: dictionaries (\code{dict_suv.csv}) and the configuration file
-(\code{config.yaml}).}
+\item{files_path}{Character string. Path to the directory provided by the user
+containing supporting files: the SUV dictionary (\code{dict_suv.csv}) and the
+main configuration file (specified by \code{config_filename}).}
 
 \item{config_filename}{Character string. Name of the YAML configuration
-file within \code{files_path}. Defaults to "config.yaml".}
+file expected within \code{files_path}. Defaults to "config.yaml".}
 
 \item{log_directory}{Character string or NULL. Path to the \strong{directory} where
 timestamped log files should be written. If NULL (default), logging to
@@ -35,33 +35,36 @@ file is disabled. The directory will be created if it doesn't exist.}
 Defaults to "validation_log_".}
 
 \item{dict_suv_target_col}{Character string or NULL. Target column name in
-\code{dict_suv.csv} containing the \emph{final desired} variable names. Defaults to
-the first column name of the loaded \code{dict_suv}.}
+\code{dict_suv.csv} containing the \emph{final desired} variable names for \code{data_suv_bi}.
+Defaults to the first column name of the loaded \code{dict_suv}.}
 
 \item{dict_suv_potential_cols}{Character vector or NULL. Names of columns in
 \code{dict_suv.csv} that contain \emph{potential sets} of variable names to match
-against the actual data. If NULL (default), all columns \emph{except}
+against the actual \code{data_suv_bi}. If NULL (default), all columns \emph{except}
 \code{dict_suv_target_col} are used.}
 
-\item{verbose}{Logical. Print some progress messages to console, and control
-level of detail \emph{within} the log file? Defaults to TRUE. Note: Most
-detailed messages go only to the log file when active.}
+\item{verbose}{Logical. If TRUE, print some progress messages to console and
+enable detailed messages within the log file. Defaults to TRUE. Note: Most
+detailed messages go only to the log file when active due to sink settings.}
 }
 \value{
 A list containing:
 \describe{
-\item{data}{The potentially modified \code{loaded_data} list (SUV columns may be
-renamed or subsetted).}
+\item{data}{The potentially modified \code{loaded_data} list. Specifically,
+\code{data_suv_bi} data frames may have columns renamed or subsetted.}
 \item{config}{The loaded configuration list.}
-\item{validation_report}{A list detailing structural issues found.}
-\item{log_file}{The full path to the generated log file, or NULL.}
+\item{validation_report}{A list detailing structural issues found (e.g.,
+missing data frames, missing columns relative to best match, columns
+discarded/renamed).}
+\item{log_file}{The full path to the generated log file, or NULL if
+logging was disabled.}
 }
 }
 \description{
-Loads dictionaries and configuration, checks dataset structures, processes
-SUV variables based on best dictionary match (renames or subsets columns),
-and logs operations and warnings to a timestamped file. Warnings are also
-shown in the console.
+Loads dictionaries and configuration, checks dataset structures against them,
+processes SUV variables based on the best dictionary match (renames or subsets
+columns), and logs operations and warnings to a timestamped file. Warnings are
+also shown in the console via a calling handler.
 }
 \details{
 Performs checks, preparation, and logging:
@@ -70,20 +73,25 @@ Performs checks, preparation, and logging:
 Uses \code{sink(..., split=FALSE)} for messages, directing them primarily
 to the log file. Warnings are captured via \code{withCallingHandlers},
 logged to the file, and also allowed to display on the console.
-\item \strong{Config/Dict Loading:} Loads YAML config and \code{dict_suv.csv}.
-\item \strong{Dataset Iteration:} Processes each dataset found by \code{load_datasets}.
-\item \strong{Log Content:} Includes R version, package version, loaded dataset names,
+\item \strong{Config/Dict Loading:} Loads YAML config and \code{dict_suv.csv} from \code{files_path}.
+Validates essential config/dict structure.
+\item \strong{Dataset Iteration:} Processes each dataset found in \code{loaded_data}.
+\item \strong{Log Content:} Includes R version, package version, input dataset names,
 best SUV match column, missing columns, and discarded/renamed SUV columns.
 \item \strong{\code{data} Check:} Verifies columns in \code{data} against \code{required_data_columns}
-in the config file.
+specified in the config file.
 \item \strong{\code{data_suv_bi} Processing:}
 \itemize{
-\item Finds the column in \code{dict_suv} with the most matching columns.
-\item Checks for missing columns relative to the best match.
-\item If best match \emph{is} the target column: Subsets \code{data_suv_bi} to keep
-only columns defined in the target column (and logs discarded columns).
+\item Finds the column in \code{dict_suv} (among \code{dict_suv_potential_cols})
+that has the most column names in common with the actual \code{data_suv_bi}.
+\item Checks for columns expected in that best-matching dictionary column
+but missing in the actual \code{data_suv_bi}.
+\item If best match \emph{is} the target column (\code{dict_suv_target_col}): Subsets
+\code{data_suv_bi} to keep only columns defined in the target column (and
+present in the data), logging discarded columns.
 \item If best match \emph{is not} the target column: Renames columns in
-\code{data_suv_bi} based on the mapping from best match -> target column.
+\code{data_suv_bi} based on the mapping from the best-match column to the
+target column in \code{dict_suv.csv}, checking for potential name clashes.
 }
 }
 }
