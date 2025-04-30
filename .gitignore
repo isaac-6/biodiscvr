@@ -2,8 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
-logs/
-.logs/
+.log/
 auxcode/
 output/
 *.Rproj

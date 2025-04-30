@@ -5,8 +5,8 @@
 ^data$
 ^output$
 ^auxcode$
-^logs$
-^.logs$
+^log$
+^.log$
 
 ^code_of_conduct\.md$
 ^\.github$
