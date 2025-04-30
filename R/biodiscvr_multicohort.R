@@ -89,7 +89,7 @@ biodiscvr_multicohort <- function(preprocessed_data,
                                   fixed_denominator_regs = NULL,
                                   min_bounds = NULL,
                                   max_bounds = NULL,
-                                  var_composition,
+                                  var_composition = 1,
                                   reference_fitness = NULL, 
                                   bilateral = TRUE,
                                   experiment_tag = NULL,
@@ -374,6 +374,18 @@ biodiscvr_multicohort <- function(preprocessed_data,
     stop(sprintf("GA bounds dimensions (%d, %d) do not match n_features (%d)", length(min_bounds), length(max_bounds), n_features))
   }
   
+  # --- Constrain literature-based regions ---
+  # This can avoid having two directions of well-performing biomarkers,
+  # although the fact that a negative t is currently penalised makes it redundant.
+  # This future-proofs other fitness metrics, like focusing on SSE alone.
+  aux_t <- c("entorhinal", "amygdala", "superiortemporal")
+  max_bounds[features %in% aux_t] <- 1.9
+  
+  aux_r <- c("brainstem", "hemiwm", "whole_cerebellum", "cerebellum_cortex", "inferior_cerebgm")
+  min_bounds[features %in% aux_r] <- 1.1
+  
+  rm(aux_t, aux_r)
+  
   
   # --- Define Multi-Cohort Fitness Wrapper ---
   # Capture variables needed from this environment
@@ -429,7 +441,7 @@ biodiscvr_multicohort <- function(preprocessed_data,
   
   
   # --- Run the GA ---
-  message(sprintf("--- Running Multi-Cohort GA (Datasets: %s; Group: %s; Fitness Aggregation: Weighted Sum) ---",
+  message(sprintf("--- Running Multi-Cohort GA (Datasets: %s; Group: %s) ---",
                   paste(datasets_to_run, collapse=", "), group))
   # --- Prepare GA args ---
   ga_popSize <- ga_config$popSize %||% 50
