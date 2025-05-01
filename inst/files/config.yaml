@@ -58,14 +58,14 @@ power_params:
 # These are examples; adjust based on your specific GA implementation and needs.
 genetic_algorithm:
   popSize: 32           # Population size per generation. Time scales linearly.
-  maxiter: 50          # Maximum number of generations (iterations) default 600. Time scales linearly.
-  run: 10              # Early stopping if no fitness improvement in X generations default 100
+  maxiter: 300          # Maximum number of generations (iterations) default 600. Time scales linearly.
+  run: 50              # Early stopping if no fitness improvement in X generations default 100
   pmutation: 0.5        # Probability of mutation
   crossover: "gareal_blxCrossover"
   mutation: "gareal_raMutation"
   elitism_prop: 2       # Number of best individuals to carry over (elitism) 
   seed: 0               # Random seed for reproducibility
-  parallel: FALSE        # Run in parallel processors. TRUE (all), FALSE, or number of processors to use.
+  parallel: TRUE        # Run in parallel processors. TRUE (all), FALSE, or number of processors to use.
   monitor: TRUE         # log each generation in the console. 
 
 # --- Other Potential Flags (from original list, if needed later) ---
