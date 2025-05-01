@@ -7,6 +7,7 @@
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- [![Lifecycle: Stable](https://img.shields.io/badge/lifecycle-stable-brightgreen)](https://lifecycle.r-lib.org/articles/stages.html#stable) -->
 <!-- [![CRAN status](https://www.r-pkg.org/badges/version/biodiscvr)](https://CRAN.R-project.org/package=biodiscvr) -->
 <!-- [![Codecov test coverage](https://codecov.io/gh/isaac-6/biodiscvr/branch/main/graph/badge.svg)](https://app.codecov.io/gh/isaac-6/biodiscvr?branch=main) -->
 [![License: GPL
