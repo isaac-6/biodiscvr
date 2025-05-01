@@ -72,9 +72,14 @@ Here's a conceptual example demonstrating a typical call to the single-dataset d
 
 ```r
 # Load the package
-# library(biodiscvr) # Replace with your package name
+# library(biodiscvr)
 
 # --- Prerequisites (Conceptual - These steps require setup) ---
+
+# 0a. A directory with available subfolders per dataset is required.
+# 0b. If your regions/features are different from the suggested names (found in "inst/files/data_suv.csv"), you can add an additional column with your names, matching the default ones.
+# 0c. Each cohort should have (currently) two files: data.csv (demographics) and data_suv_bi (regional SUV or SUVR values), with matching rows.
+# 0d. Inclusion criteria is defined in "inst/files/config.yaml".
 
 # 1. Load datasets (replace path)
 # loaded_data_list <- load_datasets(root_path = "path/to/your/data/root")
@@ -130,7 +135,7 @@ discovery_result_df <- biodiscvr_single(
   fixed_numerator_regs = NULL, # optional predefinition of fixed regions
   fixed_denominator_regs = NULL, # optional predefinition of fixed regions
   var_composition = composition_method,
-  bilateral = TRUE, # Example metadata
+  bilateral = TRUE, # Current version only does bilateral region analysis
   experiment_tag = experiment_id,
   output_csv_name = output_csv, # results file name
   output_dir = output_dir, # Set path to save csv results and plot
