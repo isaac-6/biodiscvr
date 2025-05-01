@@ -332,7 +332,7 @@ preprocess_data <- function(loaded_data,
             if (sink_active && verbose) message("  -> 'data_suv_bi': Renaming based on map '", best_match_col_name, "' -> '", dict_suv_target_col, "'.")
             mapping_df <- unique(dict_suv[, c(best_match_col_name, dict_suv_target_col)])
             mapping_df <- mapping_df[!is.na(mapping_df[[best_match_col_name]]) & nzchar(mapping_df[[best_match_col_name]]), ]
-            if (anyDuplicated(mapping_df[[best_match_col_name]])) { warning("Dataset '", dataset_name, "': Duplicates in source column '", best_match_col_name, "' for renaming.", call.=FALSE); mapping_df <- mapping_df[!duplicated(mapping_df[[best_match_col_name]]), ] }
+            if (anyDuplicated(mapping_df[[best_match_col_name]])) { warning("Dataset '", dset_name, "': Duplicates in source column '", best_match_col_name, "' for renaming.", call.=FALSE); mapping_df <- mapping_df[!duplicated(mapping_df[[best_match_col_name]]), ] }
             mapping_df <- mapping_df[!is.na(mapping_df[[dict_suv_target_col]]) & nzchar(mapping_df[[dict_suv_target_col]]), ]
             renaming_map <- stats::setNames(mapping_df[[dict_suv_target_col]], mapping_df[[best_match_col_name]])
             current_names <- names(data_processed[[dset_name]]$data_suv_bi)
@@ -340,7 +340,7 @@ preprocess_data <- function(loaded_data,
             if(length(names_to_rename_from)>0){
               new_names_for_these <- renaming_map[names_to_rename_from]; final_names <- current_names; match_indices <- match(names_to_rename_from, final_names)
               potential_new_set <- final_names; potential_new_set[match_indices] <- new_names_for_these
-              if(anyDuplicated(potential_new_set)) { warning("Dataset '", dataset_name, "': Renaming would create duplicate names. Skipping.", call. = FALSE); dataset_report$suv_rename_skipped_duplicates <- TRUE}
+              if(anyDuplicated(potential_new_set)) { warning("Dataset '", dset_name, "': Renaming would create duplicate names. Skipping.", call. = FALSE); dataset_report$suv_rename_skipped_duplicates <- TRUE}
               else {
                 final_names[match_indices] <- new_names_for_these; names(data_processed[[dset_name]]$data_suv_bi) <- final_names
                 rename_log_pairs <- stats::setNames(new_names_for_these, names_to_rename_from); dataset_report$renamed_suv_columns <- rename_log_pairs

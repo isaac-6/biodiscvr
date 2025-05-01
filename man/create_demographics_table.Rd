@@ -44,8 +44,8 @@ The function calculates:
 \itemize{
 \item N: Number of unique individuals.
 \item sex: N (\%) for each level (assuming codes 1 and 2).
-\item Age (baseline): Median \link{Q1, Q3} (Min-Max). Uses the 'AGE' column.
-\item Education (years): Median \link{Q1, Q3} (Min-Max). Uses the 'PTEDUCAT' column.
+\item Age (baseline): Median \[Q1, Q2\] (Min-Max). Uses the 'AGE' column.
+\item Education (years): Median \[Q1, Q2\] (Min-Max). Uses the 'PTEDUCAT' column.
 \item Amyloid Positive (\%): Percentage of individuals with AB=1. Uses the 'AB' column.
 \item N Sites: Count of unique sites. Uses the 'SITE' column.
 }

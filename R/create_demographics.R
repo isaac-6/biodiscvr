@@ -26,15 +26,15 @@
 #'   The function calculates:
 #'   - N: Number of unique individuals.
 #'   - sex: N (%) for each level (assuming codes 1 and 2).
-#'   - Age (baseline): Median [Q1, Q3] (Min-Max). Uses the 'AGE' column.
-#'   - Education (years): Median [Q1, Q3] (Min-Max). Uses the 'PTEDUCAT' column.
+#'   - Age (baseline): Median \\[Q1, Q2\\] (Min-Max). Uses the 'AGE' column.
+#'   - Education (years): Median \\[Q1, Q2\\] (Min-Max). Uses the 'PTEDUCAT' column.
 #'   - Amyloid Positive (%): Percentage of individuals with AB=1. Uses the 'AB' column.
 #'   - N Sites: Count of unique sites. Uses the 'SITE' column.
 #'
 #'   It handles missing columns gracefully by reporting NA and issuing warnings.
 #'
 #' @export
-#' @importFrom stats median quantile IQR sd na.omit aggregate
+#' @importFrom stats median quantile IQR sd na.omit na.pass aggregate
 #' @importFrom readr write_csv
 create_demographics_table <- function(processed_dataset_list,
                                       dataset_name,
