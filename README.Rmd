@@ -35,17 +35,20 @@ knitr::opts_chunk$set(
 The core functionality utilizes a Genetic Algorithm (GA) to search the feature space for optimal numerator and denominator combinations that optimise specific biomarker performance metrics. These metrics are calculated using linear mixed-effects models and typically include:
 
 *   **Repeatability:** Error percentage (`Rep`), calculated as the standard deviation of model residuals (data is log-transformed).
-*   **Group Separation:** T-statistics comparing biomarker slopes or changes between groups (e.g., `SepAB` for amyloid effect).
+*   **Group Separation:** T-statistics comparing biomarker slopes or changes between groups (e.g., `SepAB` for amyloid-positivity effect).
 *   **Statistical Power:** Sample Size Estimates (`SSE`) required to detect a certain effect size, calculated using the `longpower` package.
 
 The package includes functions to handle the workflow:
 
 1.  Loading data from structured directories (`load_datasets`).
-2.  Checking data integrity and preparing it based on configuration files (`check_and_prepare_data`).
-3.  Preprocessing datasets based on inclusion/exclusion criteria (`preprocess_datasets`).
-4.  Running the GA-based discovery process for single datasets (`biodiscvr_single`).
-5.  [To do: Add function for evaluating a fixed biomarker across datasets if created].
-6.  Logging results to CSV files and generating convergence plots.
+2.  Checking data integrity and preprocessing datasets based on inclusion criteria (`preprocess_data`).
+3a. Running the CVR discovery process for single datasets (`biodiscvr_single`).
+3b. Running the CVR discovery process optimised for multiple datasets (`biodiscvr_multicohort`).
+3c. Logging results to CSV files and generating convergence plots.
+
+Optional, but useful for reports:
+1. Report/log filtering of data (done in `preprocess_data`)
+2. Report demographics (age, sex, education, amyloid-positivity, unique sites and individuals) for the studies groups (all, cognitively unimpaired, and cognitively impaired).
 
 ## Installation
 
@@ -65,7 +68,7 @@ devtools::install_github("isaac-6/biodiscvr")
 ## Basic Usage Example
 
 Here's a conceptual example demonstrating a typical call to the single-dataset discovery function. 
-*Note: This example uses `eval=FALSE` as running it requires specific data setup, configuration files, and potentially significant computation time (about 1 second per GA generation, with a 12th gen Intel CPU).*
+*Note: This example uses `eval=FALSE` as running it requires specific data setup, configuration files. It takes about 1 second per GA generation, with a 12th gen Intel CPU, without running in parallel.*
 
 ```r
 # Load the package
@@ -103,9 +106,9 @@ Here's a conceptual example demonstrating a typical call to the single-dataset d
 # output_csv_name <- "discovery_results"
 # output_dir <- "results"
 # experiment_id <- "run_01_baseline"
-# composition_method <- 1 # (Only 1 -arithmetic mean- implemented and tested. 
+# composition_method <- 1 # (Only 1 -arithmetic mean- implemented and tested) 
 # If there is demand for it, it can be updated with other compositions, 
-# such as a weighted mean)
+# such as a weighted mean, geometric mean, volume-weighted...)
 
 # Define features (example - using all numeric from SUV data)
 # id_col <- config$preprocessing$id_column %||% "RID"

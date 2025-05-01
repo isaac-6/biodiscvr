@@ -451,6 +451,8 @@ biodiscvr_multicohort <- function(preprocessed_data,
   ga_pmutation <- ga_config$pmutation %||% 0.5
   ga_pcrossover <- ga_config$pcrossover %||% 0.8
   elitism_raw <- ga_config$elitism_prop %||% 2
+  ga_parallel <- ga_config$parallel %||% FALSE
+  ga_monitor <- ga_config$monitor %||% FALSE
   ga_elitism <- max(1, round(elitism_raw))
   if(elitism_raw > 0 && elitism_raw < 1) ga_elitism <- max(1, round(elitism_raw * ga_popSize))
   effective_seed <- ga_seed %||% sample.int(.Machine$integer.max, 1)
@@ -466,7 +468,8 @@ biodiscvr_multicohort <- function(preprocessed_data,
     pmutation = ga_pmutation,
     pcrossover = ga_pcrossover,
     elitism = ga_elitism,
-    monitor = TRUE, # Usually false for multi-cohort runs
+    monitor = ga_monitor,
+    parallel = ga_parallel,
     seed = effective_seed
   )
   # Add specific real-valued operators if in config

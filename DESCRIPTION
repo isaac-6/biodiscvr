@@ -33,4 +33,7 @@ Imports:
     methods,
     utils,
     stats,
-    dplyr
+    dplyr,
+Suggests:
+    parallel,
+    doParallel
