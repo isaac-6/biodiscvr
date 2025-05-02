@@ -84,389 +84,234 @@
 #' @importFrom rlang `%||%` is_character
 #' @importFrom dplyr bind_rows
 #' @importFrom stats setNames
-run_experiments <- function(prepared_data_list,
-                            config,
-                            groups = c("CU", "CI"),
-                            experiments_config_path,
-                            features = NULL,
-                            output_csv_name,
-                            output_dir = NULL,
-                            save_plots = TRUE,
-                            datasets_to_run = names(prepared_data_list),
-                            experiment_master_tag = format(Sys.time(), "%Y%m%d"),
+run_experiments <- function(prepared_data_list, config, groups = c("CU", "CI"), 
+                            experiments_config_path, features = NULL, output_csv_name, 
+                            output_dir = NULL, save_plots = TRUE, 
+                            datasets_to_run = names(prepared_data_list), 
+                            experiment_master_tag = format(Sys.time(), "%Y%m%d"), 
                             base_ga_seed = 42) {
   
-  # --- Initial Validations & Setup ---
-  stopifnot(
-    is.list(prepared_data_list), length(prepared_data_list) > 0,
-    is.list(config),
-    rlang::is_scalar_character(experiments_config_path),
-    is.null(features) || is.character(features),
-    rlang::is_scalar_character(output_csv_name),
-    is.null(output_dir) || rlang::is_scalar_character(output_dir),
-    rlang::is_scalar_logical(save_plots),
-    is.character(datasets_to_run), length(datasets_to_run) > 0,
-    rlang::is_scalar_character(experiment_master_tag),
-    is.null(base_ga_seed) || rlang::is_scalar_double(base_ga_seed)
-  )
-  # Check datasets
+  # --- Initial Validations ---
+  stopifnot(is.list(prepared_data_list), length(prepared_data_list) > 0, is.list(config),
+            rlang::is_scalar_character(experiments_config_path),
+            is.null(features) | is.character(features),
+            rlang::is_scalar_character(output_csv_name),
+            is.null(output_dir) | rlang::is_scalar_character(output_dir),
+            rlang::is_scalar_logical(save_plots),
+            is.character(datasets_to_run), length(datasets_to_run) > 0,
+            rlang::is_scalar_character(experiment_master_tag),
+            is.null(base_ga_seed) | rlang::is_scalar_double(base_ga_seed))
+  
+  # Validate datasets
   missing_dsets <- setdiff(datasets_to_run, names(prepared_data_list))
   if (length(missing_dsets) > 0) stop("Datasets not found: ", paste(missing_dsets, collapse=", "))
-  # Check config
+  
+  # Validate config
   req_conf_sections <- c("preprocessing", "model_equations", "power_params", "genetic_algorithm")
   if (!all(req_conf_sections %in% names(config))) stop("Config missing required sections.")
   
-  # --- Prepare Common Elements ---
+  # --- Setup Common Variables ---
   id_col <- config$preprocessing$id_column %||% "RID"
-  all_power_params <- config$power_params
-  var_composition <- config$genetic_algorithm$var_composition %||% 1
-  if (! var_composition %in% 0:3) stop("Invalid var_composition in config.")
-  # Formulas
-  eq_all_str <- config$model_equations$eq_all_string
-  eq_group_str <- config$model_equations$eq_group_string
-  if(is.null(eq_all_str) || is.null(eq_group_str)) stop("Missing formula strings.")
-  eq_all <- try(stats::as.formula(eq_all_str)); if(inherits(eq_all, "try-error")) stop("Invalid eq_all_str")
-  eq_group <- try(stats::as.formula(eq_group_str)); if(inherits(eq_group, "try-error")) stop("Invalid eq_group_str")
-  # LMER Control
-  lmer_control <- lme4::lmerControl(optimizer = "nloptwrap", calc.derivs = FALSE,
-                                    check.conv.singular = "ignore",
-                                    optCtrl = list(method = "nlminb", starttests = FALSE, kkt = FALSE))
+  ignore_cols <- config$preprocessing$ignore_columns %||% "idx"
   
-  # --- Load Experiments Configuration ---
+  var_composition <- config$genetic_algorithm$var_composition %||% 1
+  if (!var_composition %in% 0:3) stop("Invalid var_composition in config.")
+  
+  # Load experiments from YAML
   if (!file.exists(experiments_config_path)) stop("Experiments config file not found: ", experiments_config_path)
-  experiments_yaml <- try(yaml::read_yaml(experiments_config_path))
-  if (inherits(experiments_yaml, "try-error") || !is.list(experiments_yaml) || !"experiments" %in% names(experiments_yaml)) {
-    stop("Failed to load or parse experiments from: ", experiments_config_path)
-  }
-  experiments_list <- experiments_yaml$experiments
-  if(!is.list(experiments_list) || length(experiments_list) == 0) stop("No experiments defined in config file.")
+  experiments_list <- yaml::read_yaml(experiments_config_path)$experiments
+  if (!is.list(experiments_list) || length(experiments_list) == 0) stop("No experiments defined in config file.")
+  
   message(sprintf("Loaded %d experiment definitions.", length(experiments_list)))
   
-  # --- Find Common Features & Validate Predefined Sets ---
-  message("--- Preparing for Experiments ---")
+  # --- Identify Common Features Across Datasets ---
+  message("Identifying common features across datasets...")
+  common_features <- Reduce(intersect, lapply(datasets_to_run, function(dset) {
+    data_suv <- prepared_data_list[[dset]]$data_suv_bi
+    if (is.null(data_suv)) return(NULL)
+    setdiff(names(data_suv), c(id_col, ignore_cols))
+  }))
   
+  if (length(common_features) == 0) stop("No common features identified across datasets.")
   
-  common_features <- NULL
-  processed_at_least_one <- FALSE
-  for (dset_name in datasets_to_run) {
-    dset_data_list <- prepared_data_list[[dset_name]]
-    if (!"data_suv_bi" %in% names(dset_data_list) || !is.data.frame(dset_data_list$data_suv_bi)) next
-    current_features_all <- names(dset_data_list$data_suv_bi)
-    current_features_valid <- setdiff(current_features_all, id_col)
-    if (length(current_features_valid) == 0) next
-    if (!processed_at_least_one) { common_features <- current_features_valid; processed_at_least_one <- TRUE }
-    else { common_features <- intersect(common_features, current_features_valid) }
-    if (length(common_features) == 0) break
-  }
-  common_features <- features[features %in% common_features]
-  if (!processed_at_least_one || length(common_features) == 0) {
-    stop("Could not identify any common features across the specified datasets. Cannot proceed.")
-  }
-  message(sprintf("Identified %d common features for analysis.", length(common_features)))
+  message(sprintf("Found %d common features.", length(common_features)))
   
-  # Validate predefined fixed sets defined within experiments_list
-  validated_experiments <- list()
-  for (exp_name in names(experiments_list)) {
-    exp_def <- experiments_list[[exp_name]]
-    valid_exp_def <- exp_def # Start with original definition
-    valid_exp_def$fixed_numerator_regs_validated <- NULL
-    valid_exp_def$fixed_denominator_regs_validated <- NULL
-    valid_exp <- TRUE # Assume valid initially
-    
-    if (!is.null(exp_def$fixed_numerator_regs)) {
-      valid_num <- intersect(exp_def$fixed_numerator_regs, common_features)
-      if (length(valid_num) != length(exp_def$fixed_numerator_regs)) warning(sprintf("Exp '%s': Some fixed num regions excluded.", exp_name), call.=FALSE)
-      if (length(valid_num) == 0) { warning(sprintf("Exp '%s': No valid fixed num regions remain. Skipping.", exp_name), call.=FALSE); valid_exp <- FALSE }
-      else { valid_exp_def$fixed_numerator_regs_validated <- valid_num }
-    }
-    if (valid_exp && !is.null(exp_def$fixed_denominator_regs)) {
-      valid_den <- intersect(exp_def$fixed_denominator_regs, common_features)
-      if (length(valid_den) != length(exp_def$fixed_denominator_regs)) warning(sprintf("Exp '%s': Some fixed den regions excluded.", exp_name), call.=FALSE)
-      if (length(valid_den) == 0) { warning(sprintf("Exp '%s': No valid fixed den regions remain. Skipping.", exp_name), call.=FALSE); valid_exp <- FALSE }
-      else { valid_exp_def$fixed_denominator_regs_validated <- valid_den }
-    }
-    
-    if(valid_exp) {
-      validated_experiments[[exp_name]] <- valid_exp_def
-    }
-  }
-  if(length(validated_experiments) == 0) stop("No valid experiments remaining after validating fixed regions.")
-  message(sprintf("Validated %d experiments.", length(validated_experiments)))
-  
-  
-  # --- Store Single-Cohort Results for Multi-Cohort Phase ---
-  single_cohort_fitness_store <- list() # Structure: $ExpName$GroupName$DatasetName -> fitness
-  
-  # --- Experiment Sequence ---
-  message("\n--- Starting Single-Cohort Experiment Runs ---")
+  # --- Single-Cohort Experiment Runs ---
+  single_cohort_fitness_store <- list()
   run_counter <- 0
   
-  # == Iterate Through Validated Experiments ==
-  for (exp_name in names(validated_experiments)) {
-    exp_def <- validated_experiments[[exp_name]]
-    message(sprintf("\n*** Running Experiment: %s (%s) ***", exp_name, exp_def$description %||% "No description"))
-    
-    # Use the *validated* fixed regions for this experiment
-    fixed_num_iter1 <- exp_def$fixed_numerator_regs_validated # Can be NULL
-    fixed_den_iter1 <- exp_def$fixed_denominator_regs_validated # Can be NULL
+  for (exp_name in names(experiments_list)) {
+    exp_def <- experiments_list[[exp_name]]
+    message(sprintf("Running Single-Cohort Experiment: %s", exp_name))
+
+    fixed_num_iter1 <- exp_def$fixed_numerator_regs
+    fixed_den_iter1 <- exp_def$fixed_denominator_regs
     run_second_iter <- isTRUE(exp_def$run_second_iteration)
-    
-    
-    
-    
-    
-    
-    if (is.null(features)) {
-      potential_features <- setdiff(names(data_suv), id_col)
-      is_numeric_col <- sapply(data_suv[, potential_features, drop = FALSE], is.numeric)
-      features <- potential_features[is_numeric_col]
-      
-      if(!is.null(exp_def$fixed_numerator_regs)) {
-        features <- features[!(features %in% exp_def$fixed_numerator_regs)]
-      } else if(!is.null(exp_def$fixed_denominator_regs)) {
-        features <- features[!(features %in% exp_def$fixed_denominator_regs)]
-      }
-      
-      if (length(features) == 0) {
-        warning(sprintf("Dataset '%s': No numeric feature columns found in data_suv_bi. Cannot run GA.", dataset_name), call. = FALSE)
-        return(NULL)
-      }
-      message(sprintf("Dataset '%s': Using %d automatically identified numeric features.", dataset_name, length(features)))
-    } else {
-      
-      if(!is.null(exp_def$fixed_numerator_regs)) {
-        features <- features[!(features %in% exp_def$fixed_numerator_regs)]
-      } else if(!is.null(exp_def$fixed_denominator_regs)) {
-        features <- features[!(features %in% exp_def$fixed_denominator_regs)]
-      }
-      
-      if (length(features) == 0) {
-        warning(sprintf("Dataset '%s': No features provided or remaining. Cannot run GA.", dataset_name), call. = FALSE)
-        return(NULL)
-      }
-    }
-    
-    common_features <- common_features[common_features %in% features]
-    
-    
-    
-    
-    
-    
-    # Store results from the first iteration if second iteration is needed
-    first_iter_regions <- list() # Store list(num=..., den=...) keyed by Dataset_Group
-    
-    # --- Run First Iteration (Baseline or Predefined Fixed) ---
+
+    first_iter_regions <- list()
+
     for (group in groups) {
-      single_cohort_fitness_store[[exp_name]] <- single_cohort_fitness_store[[exp_name]] %||% list()
       single_cohort_fitness_store[[exp_name]][[group]] <- list()
-      
+
       for (dset_name in datasets_to_run) {
         run_counter <- run_counter + 1
-        current_seed <- if(!is.null(base_ga_seed)) base_ga_seed else 42
-        current_tag <- paste(experiment_master_tag, exp_name, group, "Iter1", sep = "_")
-        
-        message(sprintf("Running Iter1: Dataset=%s, Group=%s, Tag=%s", dset_name, group, current_tag))
-        run_result_list <- try(biodiscvr_single(
+        current_tag <- paste(experiment_master_tag, exp_name, group, "Iter1", sep="_")
+
+        message(sprintf("Running Iter1: %s, %s", dset_name, group))
+
+        run_result <- try(biodiscvr_single(
           dataset_data = prepared_data_list[[dset_name]],
-          dataset_name = dset_name, 
-          group = group, 
+          dataset_name = dset_name,
+          group = group,
           config = config,
-          features = common_features, # Use common features
+          features = common_features,
           var_composition = var_composition,
-          fixed_numerator_regs = fixed_num_iter1, # Use validated fixed for Iter1
+          fixed_numerator_regs = fixed_num_iter1,
           fixed_denominator_regs = fixed_den_iter1,
           experiment_tag = current_tag,
           output_csv_name = output_csv_name,
-          output_dir = output_dir, 
+          output_dir = output_dir,
           save_plot = save_plots,
-          ga_seed = current_seed,
-          # Pass bounds from config if needed by biodiscvr_single
-          min_bounds = config$genetic_algorithm$min_bounds,
-          max_bounds = config$genetic_algorithm$max_bounds
+          ga_seed = base_ga_seed + run_counter
         ), silent = TRUE)
-        
-        
-        # --- Store Fitness & Regions ---
-        if (!inherits(run_result_list, "try-error") && is.list(run_result_list) && !is.null(run_result_list$result_row)) {
-          fitness_val <- run_result_list$result_row$fitness_value
-          single_cohort_fitness_store[[exp_name]][[group]][[dset_name]] <- ifelse(is.finite(fitness_val), fitness_val, NA) # Store NA if Inf/-Inf
-          
-          if (run_second_iter && (!is.null(fixed_num_iter1) || !is.null(fixed_den_iter1))) { # Only store if fixed & iter2 needed
-            result_key <- paste(dset_name, group, sep="_")
-            first_iter_regions[[result_key]] <- list(
-              num = run_result_list$best_regs_numerator,
-              den = run_result_list$best_regs_denominator
+
+        if (!inherits(run_result, "try-error") && !is.null(run_result$result_row)) {
+          fitness_val <- run_result$result_row$fitness_value
+          single_cohort_fitness_store[[exp_name]][[group]][[dset_name]] <- ifelse(is.finite(fitness_val), fitness_val, NA)
+
+          if (run_second_iter) {
+            first_iter_regions[[paste(dset_name, group, sep="_")]] <- list(
+              num = run_result$best_regs_numerator,
+              den = run_result$best_regs_denominator
             )
           }
-        } else {
-          warning(sprintf("Run failed/returned invalid result: Dataset=%s, Group=%s, Tag=%s.", dset_name, group, current_tag), call.=FALSE)
-          single_cohort_fitness_store[[exp_name]][[group]][[dset_name]] <- NA
         }
-      } # end dataset loop (Iter1)
-    } # end group loop (Iter1)
-    
-    
-    # --- Run Second Iteration (if requested and applicable) ---
-    if (run_second_iter && (!is.null(fixed_num_iter1) || !is.null(fixed_den_iter1)) && is.null(fixed_num_iter1) != is.null(fixed_den_iter1) ) { # Only run if exactly ONE side was fixed
-      message(sprintf("\n*** Running Second Iteration for Experiment: %s ***", exp_name))
-      
+      }
+    }
+
+    # --- Second Iteration (if required) ---
+    if (run_second_iter) {
+      message(sprintf("Running Second Iteration for %s", exp_name))
+
       for (group in groups) {
         for (dset_name in datasets_to_run) {
           result_key <- paste(dset_name, group, sep="_")
           first_iter_res <- first_iter_regions[[result_key]]
-          
-          if (is.null(first_iter_res)) {
-            message(sprintf("Skipping Iter2 for %s/%s: No valid result from Iter1.", dset_name, group)); next
-          }
-          
-          new_fixed_num <- NULL; new_fixed_den <- NULL; iter2_tag_suffix <- ""
-          if (!is.null(fixed_den_iter1)) { # Original run fixed Denominator
-            new_fixed_num <- first_iter_res$num; iter2_tag_suffix <- "FixNumFound"
-            if(is.null(new_fixed_num) || length(new_fixed_num)==0) {message(sprintf("Skipping Iter2 for %s/%s: No numerator found in Iter1.",dset_name,group)); next}
-          } else { # Original run fixed Numerator
-            new_fixed_den <- first_iter_res$den; iter2_tag_suffix <- "FixDenFound"
-            if(is.null(new_fixed_den) || length(new_fixed_den)==0) {message(sprintf("Skipping Iter2 for %s/%s: No denominator found in Iter1.",dset_name,group)); next}
-          }
-          
-          run_counter <- run_counter + 1
-          current_seed <- if(!is.null(base_ga_seed)) base_ga_seed else NULL
-          current_tag <- paste(experiment_master_tag, exp_name, group, iter2_tag_suffix, sep = "_")
-          
-          message(sprintf("Running Iter2: Dataset=%s, Group=%s, Tag=%s", dset_name, group, current_tag))
-          run_result_list_iter2 <- try(biodiscvr_single(
+          if (is.null(first_iter_res)) next
+
+          new_fixed_num <- if (!is.null(fixed_den_iter1)) first_iter_res$num else NULL
+          new_fixed_den <- if (!is.null(fixed_num_iter1)) first_iter_res$den else NULL
+          iter2_tag <- paste(experiment_master_tag, exp_name, group, "Iter2", sep="_")
+
+          run_result_iter2 <- try(biodiscvr_single(
             dataset_data = prepared_data_list[[dset_name]],
-            dataset_name = dset_name, group = group, config = config,
+            dataset_name = dset_name,
+            group = group,
+            config = config,
             features = common_features,
-            var_composition = var_composition,
-            fixed_numerator_regs = new_fixed_num, # Use newly fixed regions
+            fixed_numerator_regs = new_fixed_num,
             fixed_denominator_regs = new_fixed_den,
-            experiment_tag = current_tag,
+            experiment_tag = iter2_tag,
             output_csv_name = output_csv_name,
-            output_dir = output_dir, 
+            output_dir = output_dir,
             save_plot = save_plots,
-            ga_seed = current_seed,
-            min_bounds = config$genetic_algorithm$min_bounds,
-            max_bounds = config$genetic_algorithm$max_bounds
+            ga_seed = base_ga_seed + run_counter
           ), silent = TRUE)
-          
-          if (inherits(run_result_list_iter2, "try-error") || is.null(run_result_list_iter2)) {
-            warning(sprintf("Run failed/returned NULL: Dataset=%s, Group=%s, Tag=%s.", dset_name, group, current_tag), call.=FALSE)
-          }
-          # No need to store results from Iter2 for multi-cohort phase
-        } # end dataset loop (Iter2)
-      } # end group loop (Iter2)
-    } else if (run_second_iter) {
-      message(sprintf("Skipping Second Iteration for Exp '%s': Not applicable (requires exactly one side fixed in Iter1).", exp_name))
-    }# end if run_second_iter
+        }
+      }
+    }
+  }
+  
+  # --- Multi-Cohort Phase (with Second Iteration) ---
+  message("Starting Multi-Cohort Experiment Runs...")
+  
+  for (exp_name in names(experiments_list)) {
+    exp_def <- experiments_list[[exp_name]]
     
-  } # end loop through experiments
-  
-  
-  # ==================================================
-  # == Multi-Cohort Phase ==
-  # ==================================================
-  message("\n--- Starting Multi-Cohort Experiment Runs ---")
-  
-  # Check if the multi-cohort function exists (replace with actual name if different)
-  if (!exists("biodiscvr_multicohort") || !is.function(biodiscvr_multicohort)){
-    warning("Function 'biodiscvr_multicohort' is not defined or available. Skipping multi-cohort phase.", call.=FALSE)
-  } else {
-    for (exp_name in names(validated_experiments)) { # Use validated experiments
-      exp_def <- validated_experiments[[exp_name]]
-      message(sprintf("\n*** Running Multi-Cohort for Experiment: %s ***", exp_name))
+    for (group in groups) {
+      ref_fitness_vector <- unlist(single_cohort_fitness_store[[exp_name]][[group]])
+      ref_fitness_vector <- ref_fitness_vector[!is.na(ref_fitness_vector)] # Remove NAs
       
-      # --- Prepare fixed regions for this experiment ---
-      fixed_num <- exp_def$fixed_numerator_regs_validated # Use validated
-      fixed_den <- exp_def$fixed_denominator_regs_validated # Use validated
+      if (length(ref_fitness_vector) < 2) {
+        warning(sprintf("Skipping Multi-Cohort run for '%s' - Group '%s': Not enough valid fitness values.", exp_name, group), call. = FALSE)
+        next
+      }
       
-      # --- Run multi-cohort optimization for EACH group ---
-      for (group in groups) {
+      # --- First Multi-Cohort Iteration ---
+      first_iter_tag <- paste(experiment_master_tag, exp_name, group, "MultiCohort_Iter1", sep = "_")
+      
+      message(sprintf("Running First MultiCohort Iteration: %s (%d datasets)", first_iter_tag, length(ref_fitness_vector)))
+      
+      first_iter_result <- try(biodiscvr_multicohort(
+        preprocessed_data = prepared_data_list,
+        datasets_to_run = datasets_to_run,
+        group = group,
+        config = config,
+        features = common_features,
+        fixed_numerator_regs = exp_def$fixed_numerator_regs,
+        fixed_denominator_regs = exp_def$fixed_denominator_regs,
+        reference_fitness = ref_fitness_vector,
+        experiment_tag = first_iter_tag,
+        output_csv_name = output_csv_name,
+        output_dir = output_dir,
+        save_plot = save_plots,
+        ga_seed = base_ga_seed
+      ), silent = TRUE)
+      
+      if (inherits(first_iter_result, "try-error") || is.null(first_iter_result)) {
+        warning(sprintf("Multi-Cohort Iter1 failed for '%s' - Group '%s'.", exp_name, group), call. = FALSE)
+        next
+      }
+      
+      # Store best numerator and denominator from first multi-cohort iteration
+      best_num_regions <- first_iter_result$best_regs_numerator
+      best_den_regions <- first_iter_result$best_regs_denominator
+      
+      # --- Determine Fixed Regions for Second Iteration ---
+      new_fixed_num <- if (!is.null(exp_def$fixed_denominator_regs)) best_num_regions else NULL
+      new_fixed_den <- if (!is.null(exp_def$fixed_numerator_regs)) best_den_regions else NULL
+      
+      message(sprintf("DEBUG: Running second multi-cohort iteration for %s - Group %s (Numerator Fixed: %s, Denominator Fixed: %s)", 
+                      exp_name, group, 
+                      !is.null(new_fixed_num), 
+                      !is.null(new_fixed_den)))
+      
+      if (!is.null(new_fixed_num) || !is.null(new_fixed_den)) {
+        second_iter_tag <- paste(experiment_master_tag, exp_name, group, "MultiCohort_Iter2", sep = "_")
         
-        # --- Fetch the reference fitness vector ---
-        ref_fitness_list <- single_cohort_fitness_store[[exp_name]][[group]]
-        # Filter for datasets actually being run and remove NAs
-        ref_fitness_list <- ref_fitness_list[names(ref_fitness_list) %in% datasets_to_run]
-        ref_fitness_vector <- unlist(ref_fitness_list)
-        ref_fitness_vector <- ref_fitness_vector[!is.na(ref_fitness_vector)]
+        message(sprintf("Running Second MultiCohort Iteration: %s", second_iter_tag))
         
-        if(length(ref_fitness_vector) == 0) {
-          warning(sprintf("Skipping Multi-Cohort run for Exp '%s', Group '%s': No valid single-cohort reference fitness values found for target datasets.", exp_name, group), call.=FALSE)
-          next
-        }
-        # Ensure names match datasets_to_run included in the vector
-        datasets_for_mc_ref <- names(ref_fitness_vector)
-        if(length(datasets_for_mc_ref) < 2) { # Check if enough datasets remain *after* getting refs
-          warning(sprintf("Skipping Multi-Cohort run for Exp '%s', Group '%s': Fewer than 2 datasets have valid reference fitness.", exp_name, group), call.=FALSE)
-          next
-        }
-        
-        
-        run_counter <- run_counter + 1
-        current_seed <- if(!is.null(base_ga_seed)) base_ga_seed else NULL
-        current_tag <- paste(experiment_master_tag, exp_name, group, "MultiCohort", sep = "_")
-        
-        message(sprintf("Running MultiCohort: Exp=%s, Group=%s, Tag=%s (on %d datasets)", exp_name, group, current_tag, length(datasets_for_mc_ref)))
-        
-        # --- *** DEBUGGING BLOCK: Inspect Arguments Before Call *** ---
-        message("--- DEBUG: Arguments for biodiscvr_multicohort ---")
-        message("datasets_to_run (for MC): ", paste(datasets_for_mc_ref, collapse=", "))
-        message("group: ", group)
-        message("common_features (first few): ", paste(head(common_features), collapse=", "))
-        message("fixed_numerator_regs: ", if(is.null(fixed_num)) "NULL" else paste(fixed_num, collapse=", "))
-        message("fixed_denominator_regs: ", if(is.null(fixed_den)) "NULL" else paste(fixed_den, collapse=", "))
-        message("var_composition: ", var_composition)
-        message("reference_fitness (length ", length(ref_fitness_vector), "):")
-        print(ref_fitness_vector) # Print the actual named vector
-        message("experiment_tag: ", current_tag)
-        message("output_csv_name: ", output_csv_name)
-        message("ga_seed: ", current_seed %||% "NULL")
-        message("min_bounds (length): ", length(config$genetic_algorithm$min_bounds %||% 0.1)) # Check length/presence
-        message("max_bounds (length): ", length(config$genetic_algorithm$max_bounds %||% 2.9)) # Check length/presence
-        message("----------------------------------------------------")
-        # --- *** END DEBUGGING BLOCK *** ---
-        
-        # --- Call the multi-cohort function ---
-        mc_result_list <- try(biodiscvr_multicohort(
-          preprocessed_data = prepared_data_list, # Pass the main list
-          datasets_to_run = datasets_for_mc_ref, # Use datasets with valid reference
+        second_iter_result <- try(biodiscvr_multicohort(
+          preprocessed_data = prepared_data_list,
+          datasets_to_run = datasets_to_run,
           group = group,
           config = config,
-          features = common_features, # Pass common features
-          fixed_numerator_regs = fixed_num,
-          fixed_denominator_regs = fixed_den,
-          var_composition = var_composition,
-          reference_fitness = ref_fitness_vector, # Pass the named vector
-          bilateral = TRUE, # Get from config?
-          experiment_tag = current_tag,
+          features = common_features,
+          fixed_numerator_regs = new_fixed_num,
+          fixed_denominator_regs = new_fixed_den,
+          reference_fitness = ref_fitness_vector,
+          experiment_tag = second_iter_tag,
           output_csv_name = output_csv_name,
-          output_dir = output_dir, 
-          save_plot = save_plots, 
-          ga_seed = current_seed,
-          # Pass bounds from config if needed by biodiscvr_multicohort
-          min_bounds = config$genetic_algorithm$min_bounds,
-          max_bounds = config$genetic_algorithm$max_bounds
-          # Add other necessary args from config$genetic_algorithm
+          output_dir = output_dir,
+          save_plot = save_plots,
+          ga_seed = base_ga_seed
         ), silent = TRUE)
         
-        if (inherits(mc_result_list, "try-error")) {
-          warning(sprintf("Multi-Cohort run failed: Exp=%s, Group=%s, Tag=%s. Error: %s", exp_name, group, current_tag, conditionMessage(attr(mc_result_list,"condition"))), call.=FALSE)
-        } else {
-          # Optionally process/log per_dataset_metrics from mc_result_list if needed
-          message(sprintf("Multi-Cohort run completed for Exp '%s', Group '%s'.", exp_name, group))
+        if (inherits(second_iter_result, "try-error") || is.null(second_iter_result)) {
+          warning(sprintf("Multi-Cohort Iter2 failed for '%s' - Group '%s'.", exp_name, group), call. = FALSE)
         }
-      } # end group loop for multi-cohort
-    } # end experiment loop for multi-cohort
-  } # end else block (if biodiscvr_multicohort exists)
+      }
+    }
+  }
   
+  message("Multi-Cohort experiments completed.")
   
-  message("\n--- All Experiments Completed ---")
+  message("All experiments completed.")
   message("Results logged to: ", output_csv_name)
-  if(save_plots && !is.null(output_dir)) message("Single-cohort plots saved to: ", output_dir)
   
   invisible(list(
     output_csv_name = output_csv_name,
-    output_dir = output_dir,
-    single_cohort_fitness = single_cohort_fitness_store # Return stored fitness
+    output_dir = output_dir
+    # single_cohort_fitness = single_cohort_fitness_store # Return stored fitness
   ))
 }

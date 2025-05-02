@@ -7,7 +7,9 @@
 run_experiments(
   prepared_data_list,
   config,
+  groups = c("CU", "CI"),
   experiments_config_path,
+  features = NULL,
   output_csv_name,
   output_dir = NULL,
   save_plots = TRUE,
@@ -24,8 +26,14 @@ containing filtered data for multiple datasets (e.g., \code{list(ADNI=list(data=
 \code{check_and_prepare_data$config}). Must contain sections like
 \code{preprocessing}, \code{model_equations}, \code{power_params}, \code{genetic_algorithm}.}
 
+\item{groups}{groups to run the experiments for. Defaults to c("CU", "CI")}
+
 \item{experiments_config_path}{Character string. Path to the YAML file defining
 the experiments to run. See Details for expected structure.}
+
+\item{features}{Character vector. Names of columns in \code{dataset_data$data_suv_bi}
+to be considered as features by the GA. If NULL (default), uses all numeric
+columns excluding the ID column specified in \code{config$preprocessing$id_column}.}
 
 \item{output_csv_name}{Character string. Full path to the CSV file where
 results from ALL experimental runs (single and multi-cohort) will be appended.
