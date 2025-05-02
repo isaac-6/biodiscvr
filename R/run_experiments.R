@@ -16,6 +16,9 @@
 #' @param groups groups to run the experiments for. Defaults to c("CU", "CI")
 #' @param experiments_config_path Character string. Path to the YAML file defining
 #'   the experiments to run. See Details for expected structure.
+#' @param features Character vector. Names of columns in `dataset_data$data_suv_bi`
+#'   to be considered as features by the GA. If NULL (default), uses all numeric
+#'   columns excluding the ID column specified in `config$preprocessing$id_column`.
 #' @param output_csv_name Character string. Full path to the CSV file where
 #'   results from ALL experimental runs (single and multi-cohort) will be appended.
 #'   The file will be created with headers if it doesn't exist. Directory created if needed.
@@ -85,6 +88,7 @@ run_experiments <- function(prepared_data_list,
                             config,
                             groups = c("CU", "CI"),
                             experiments_config_path,
+                            features = NULL,
                             output_csv_name,
                             output_dir = NULL,
                             save_plots = TRUE,
@@ -97,6 +101,7 @@ run_experiments <- function(prepared_data_list,
     is.list(prepared_data_list), length(prepared_data_list) > 0,
     is.list(config),
     rlang::is_scalar_character(experiments_config_path),
+    is.null(features) || is.character(features),
     rlang::is_scalar_character(output_csv_name),
     is.null(output_dir) || rlang::is_scalar_character(output_dir),
     rlang::is_scalar_logical(save_plots),
@@ -139,6 +144,8 @@ run_experiments <- function(prepared_data_list,
   
   # --- Find Common Features & Validate Predefined Sets ---
   message("--- Preparing for Experiments ---")
+  
+  
   common_features <- NULL
   processed_at_least_one <- FALSE
   for (dset_name in datasets_to_run) {
@@ -151,6 +158,7 @@ run_experiments <- function(prepared_data_list,
     else { common_features <- intersect(common_features, current_features_valid) }
     if (length(common_features) == 0) break
   }
+  common_features <- features[features %in% common_features]
   if (!processed_at_least_one || length(common_features) == 0) {
     stop("Could not identify any common features across the specified datasets. Cannot proceed.")
   }
@@ -202,6 +210,48 @@ run_experiments <- function(prepared_data_list,
     fixed_num_iter1 <- exp_def$fixed_numerator_regs_validated # Can be NULL
     fixed_den_iter1 <- exp_def$fixed_denominator_regs_validated # Can be NULL
     run_second_iter <- isTRUE(exp_def$run_second_iteration)
+    
+    
+    
+    
+    
+    
+    if (is.null(features)) {
+      potential_features <- setdiff(names(data_suv), id_col)
+      is_numeric_col <- sapply(data_suv[, potential_features, drop = FALSE], is.numeric)
+      features <- potential_features[is_numeric_col]
+      
+      if(!is.null(exp_def$fixed_numerator_regs)) {
+        features <- features[!(features %in% exp_def$fixed_numerator_regs)]
+      } else if(!is.null(exp_def$fixed_denominator_regs)) {
+        features <- features[!(features %in% exp_def$fixed_denominator_regs)]
+      }
+      
+      if (length(features) == 0) {
+        warning(sprintf("Dataset '%s': No numeric feature columns found in data_suv_bi. Cannot run GA.", dataset_name), call. = FALSE)
+        return(NULL)
+      }
+      message(sprintf("Dataset '%s': Using %d automatically identified numeric features.", dataset_name, length(features)))
+    } else {
+      
+      if(!is.null(exp_def$fixed_numerator_regs)) {
+        features <- features[!(features %in% exp_def$fixed_numerator_regs)]
+      } else if(!is.null(exp_def$fixed_denominator_regs)) {
+        features <- features[!(features %in% exp_def$fixed_denominator_regs)]
+      }
+      
+      if (length(features) == 0) {
+        warning(sprintf("Dataset '%s': No features provided or remaining. Cannot run GA.", dataset_name), call. = FALSE)
+        return(NULL)
+      }
+    }
+    
+    common_features <- common_features[common_features %in% features]
+    
+    
+    
+    
+    
     
     # Store results from the first iteration if second iteration is needed
     first_iter_regions <- list() # Store list(num=..., den=...) keyed by Dataset_Group
@@ -346,6 +396,10 @@ run_experiments <- function(prepared_data_list,
         }
         # Ensure names match datasets_to_run included in the vector
         datasets_for_mc_ref <- names(ref_fitness_vector)
+        if(length(datasets_for_mc_ref) < 2) { # Check if enough datasets remain *after* getting refs
+          warning(sprintf("Skipping Multi-Cohort run for Exp '%s', Group '%s': Fewer than 2 datasets have valid reference fitness.", exp_name, group), call.=FALSE)
+          next
+        }
         
         
         run_counter <- run_counter + 1
@@ -353,6 +407,24 @@ run_experiments <- function(prepared_data_list,
         current_tag <- paste(experiment_master_tag, exp_name, group, "MultiCohort", sep = "_")
         
         message(sprintf("Running MultiCohort: Exp=%s, Group=%s, Tag=%s (on %d datasets)", exp_name, group, current_tag, length(datasets_for_mc_ref)))
+        
+        # --- *** DEBUGGING BLOCK: Inspect Arguments Before Call *** ---
+        message("--- DEBUG: Arguments for biodiscvr_multicohort ---")
+        message("datasets_to_run (for MC): ", paste(datasets_for_mc_ref, collapse=", "))
+        message("group: ", group)
+        message("common_features (first few): ", paste(head(common_features), collapse=", "))
+        message("fixed_numerator_regs: ", if(is.null(fixed_num)) "NULL" else paste(fixed_num, collapse=", "))
+        message("fixed_denominator_regs: ", if(is.null(fixed_den)) "NULL" else paste(fixed_den, collapse=", "))
+        message("var_composition: ", var_composition)
+        message("reference_fitness (length ", length(ref_fitness_vector), "):")
+        print(ref_fitness_vector) # Print the actual named vector
+        message("experiment_tag: ", current_tag)
+        message("output_csv_name: ", output_csv_name)
+        message("ga_seed: ", current_seed %||% "NULL")
+        message("min_bounds (length): ", length(config$genetic_algorithm$min_bounds %||% 0.1)) # Check length/presence
+        message("max_bounds (length): ", length(config$genetic_algorithm$max_bounds %||% 2.9)) # Check length/presence
+        message("----------------------------------------------------")
+        # --- *** END DEBUGGING BLOCK *** ---
         
         # --- Call the multi-cohort function ---
         mc_result_list <- try(biodiscvr_multicohort(

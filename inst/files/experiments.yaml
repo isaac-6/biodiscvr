@@ -5,13 +5,13 @@ experiments:
     fixed_denominator_regs: NULL
     run_second_iteration: FALSE # Not applicable
 
-  # FixedRef_Composite:
-  #   description: "Fix denominator to composote reference"
-  #   fixed_numerator_regs: NULL
-  #   fixed_denominator_regs: ["hemiwm", 
-  #        "whole_cerebellum",
-  #        "brainstem"]
-  #   run_second_iteration: TRUE # Trigger second iteration for this
+  FixedRef_Composite:
+    description: "Fix denominator to composote reference"
+    fixed_numerator_regs: NULL
+    fixed_denominator_regs: ["hemiwm", 
+         "whole_cerebellum",
+         "brainstem"]
+    run_second_iteration: TRUE # Trigger second iteration for this
 
   # FixedRef_Cerebellum:
   #   description: "Fix denominator to whole cerebellum"

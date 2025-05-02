@@ -121,6 +121,7 @@ biodiscvr_multicohort <- function(preprocessed_data,
   } else {
     warning("Argument 'reference_fitness' not provided. Using equal weights (1) for all datasets in fitness aggregation.", call. = FALSE)
     reference_fitness <- rep(1, length(datasets_to_run)) # Default: vector of 1
+    names(reference_fitness) = datasets_to_run
   }
   
   # Other validations (copy/adapt from biodiscvr_single)
@@ -376,7 +377,7 @@ biodiscvr_multicohort <- function(preprocessed_data,
   
   # --- Determine Features for GA (use common features) ---
   # If GA needs to run (i.e., not both num/den fixed), it should operate only on common features
-  features <- common_features
+  features <- features[features %in% common_features]
   if (length(features) == 0) {
     # This case should have been caught earlier, but double-check
     stop("Cannot run GA as no common features for exploration were identified across datasets.")
@@ -506,7 +507,7 @@ biodiscvr_multicohort <- function(preprocessed_data,
     
     for (i in seq_along(datasets_to_run_internal)) {
       dset_name_internal <- datasets_to_run_internal[i]
-      dataset_data_internal <- preprocessed_data_internal$data[[dset_name_internal]]
+      dataset_data_internal <- preprocessed_data_internal[[dset_name_internal]]
       
       fitness_value <- tryCatch({
         .calculate_fitness( # Call the package's internal function
