@@ -132,6 +132,10 @@ run_experiments <- function(prepared_data_list, config, groups = c("CU", "CI"),
     setdiff(names(data_suv), c(id_col, ignore_cols))
   }))
   
+  if (!is.null(features)) {
+    common_features <- intersect(common_features, features)
+  }
+  
   if (length(common_features) == 0) stop("No common features identified across datasets.")
   
   message(sprintf("Found %d common features.", length(common_features)))
