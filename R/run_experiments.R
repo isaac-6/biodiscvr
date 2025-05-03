@@ -35,7 +35,7 @@
 #'   individual run tags for easier filtering of results. Defaults to the
 #'   current date (YYYYMMDD).
 #' @param base_ga_seed Numeric or NULL. A base seed for the GA runs. If provided,
-#'   a unique seed derived from this base (`base_ga_seed + run_counter`) will be
+#'   a unique seed derived from this base (`base_ga_seed`) will be
 #'   used for each GA run for reproducibility. If NULL, random seeds are used.
 #'
 #' @return Invisibly returns a list containing the path to the main output CSV file
@@ -84,9 +84,15 @@
 #' @importFrom rlang `%||%` is_character
 #' @importFrom dplyr bind_rows
 #' @importFrom stats setNames
-run_experiments <- function(prepared_data_list, config, groups = c("CU", "CI"), 
-                            experiments_config_path, features = NULL, output_csv_name, 
-                            output_dir = NULL, save_plots = TRUE, 
+#' @importFrom progress progress_bar
+run_experiments <- function(prepared_data_list, 
+                            config, 
+                            groups = c("CU", "CI"), 
+                            experiments_config_path, 
+                            features = NULL, 
+                            output_csv_name, 
+                            output_dir = NULL, 
+                            save_plots = TRUE, 
                             datasets_to_run = names(prepared_data_list), 
                             experiment_master_tag = format(Sys.time(), "%Y%m%d"), 
                             base_ga_seed = 42) {
@@ -105,6 +111,7 @@ run_experiments <- function(prepared_data_list, config, groups = c("CU", "CI"),
   # Validate datasets
   missing_dsets <- setdiff(datasets_to_run, names(prepared_data_list))
   if (length(missing_dsets) > 0) stop("Datasets not found: ", paste(missing_dsets, collapse=", "))
+  datasets_to_run <- intersect(datasets_to_run, names(prepared_data_list))
   
   # Validate config
   req_conf_sections <- c("preprocessing", "model_equations", "power_params", "genetic_algorithm")
@@ -139,6 +146,23 @@ run_experiments <- function(prepared_data_list, config, groups = c("CU", "CI"),
   if (length(common_features) == 0) stop("No common features identified across datasets.")
   
   message(sprintf("Found %d common features.", length(common_features)))
+  
+  
+  # --- progress bar ---
+  # Multicohort take as many time as the number of cohorts
+  # Experiments run twice if there is a second iteration (for fixed regions)
+  num_2iter <- sum(sapply(experiments_list, function(x) x$run_second_iteration))
+  aux <- ifelse(length(datasets_to_run) > 1, length(datasets_to_run) +1, 1)
+  total_iterations <- aux * (length(experiments_list)+num_2iter) * length(groups)
+  
+  pb <- progress_bar$new(
+    format = "Progress [:bar] :percent (:current/:total) | ETA: :eta \n",
+    total = total_iterations,
+    clear = FALSE,
+    width = 50
+  )
+  
+  
   
   # --- Single-Cohort Experiment Runs ---
   single_cohort_fitness_store <- list()
@@ -176,7 +200,7 @@ run_experiments <- function(prepared_data_list, config, groups = c("CU", "CI"),
           output_csv_name = output_csv_name,
           output_dir = output_dir,
           save_plot = save_plots,
-          ga_seed = base_ga_seed + run_counter
+          ga_seed = base_ga_seed
         ), silent = TRUE)
 
         if (!inherits(run_result, "try-error") && !is.null(run_result$result_row)) {
@@ -190,6 +214,8 @@ run_experiments <- function(prepared_data_list, config, groups = c("CU", "CI"),
             )
           }
         }
+        
+        pb$tick()
       }
     }
 
@@ -219,8 +245,10 @@ run_experiments <- function(prepared_data_list, config, groups = c("CU", "CI"),
             output_csv_name = output_csv_name,
             output_dir = output_dir,
             save_plot = save_plots,
-            ga_seed = base_ga_seed + run_counter
+            ga_seed = base_ga_seed
           ), silent = TRUE)
+          
+          pb$tick()
         }
       }
     }
@@ -267,6 +295,10 @@ run_experiments <- function(prepared_data_list, config, groups = c("CU", "CI"),
         next
       }
       
+      
+      # it takes more time to run the multicohort, but we count it as one iteration
+      pb$tick()
+      
       # Store best numerator and denominator from first multi-cohort iteration
       best_num_regions <- first_iter_result$best_regs_numerator
       best_den_regions <- first_iter_result$best_regs_denominator
@@ -304,6 +336,9 @@ run_experiments <- function(prepared_data_list, config, groups = c("CU", "CI"),
         if (inherits(second_iter_result, "try-error") || is.null(second_iter_result)) {
           warning(sprintf("Multi-Cohort Iter2 failed for '%s' - Group '%s'.", exp_name, group), call. = FALSE)
         }
+        
+        # it takes more time to run the multicohort, but we count it as one iteration
+        pb$tick()
       }
     }
   }

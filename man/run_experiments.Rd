@@ -56,7 +56,7 @@ individual run tags for easier filtering of results. Defaults to the
 current date (YYYYMMDD).}
 
 \item{base_ga_seed}{Numeric or NULL. A base seed for the GA runs. If provided,
-a unique seed derived from this base (\code{base_ga_seed + run_counter}) will be
+a unique seed derived from this base (\code{base_ga_seed}) will be
 used for each GA run for reproducibility. If NULL, random seeds are used.}
 }
 \value{

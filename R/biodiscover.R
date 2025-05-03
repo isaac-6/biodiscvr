@@ -656,6 +656,7 @@ biodiscvr_single <- function(dataset_data,
   # --- 11. Return Structured Results List ---
   return(list(
     result_row = result_row, # The data frame row for the CSV
+    ga_obj = ga_result_obj,
     best_regs_numerator = best_regs_numerator, # Vector of numerator regions
     best_regs_denominator = best_regs_denominator # Vector of denominator regions
     # best_solution_vector = best_chromosome # The raw chromosome vector from GA

@@ -34,6 +34,7 @@ Imports:
     utils,
     stats,
     dplyr,
+    progress
 Suggests:
     parallel,
     doParallel
