@@ -7,7 +7,7 @@
 #' @param preprocessed_data List. The output from `preprocess_datasets`, containing
 #'   the potentially filtered `$data` list for multiple cohorts and `$config`.
 #' @param datasets_to_run Character vector. Names of the datasets within
-#'   `preprocessed_data$data` to include in the multi-cohort fitness evaluation.
+#'   `preprocessed_data` to include in the multi-cohort fitness evaluation.
 #' @param group Character string. The group ("CU" or "CI") to use for evaluating
 #'   fitness via the internal `.calculate_fitness` function within each cohort.
 #' @param config List. The loaded configuration object from `check_and_prepare_data`.
@@ -100,15 +100,15 @@ biodiscvr_multicohort <- function(preprocessed_data,
                                   ...) {
   
   # --- Input Validation ---
-  if (!is.list(preprocessed_data) || !"data" %in% names(preprocessed_data) || !"config" %in% names(preprocessed_data)) {
-    stop("'preprocessed_data' must be a list containing 'data' and 'config'.")
+  if (!is.list(preprocessed_data)) {
+    stop("'preprocessed_data' must be a list containing a folder per dataset.")
   }
   if (!rlang::is_character(datasets_to_run) || length(datasets_to_run) == 0) { # Use rlang for type check
     stop("'datasets_to_run' must be a non-empty character vector.")
   }
-  missing_dsets <- setdiff(datasets_to_run, names(preprocessed_data$data))
+  missing_dsets <- setdiff(datasets_to_run, names(preprocessed_data))
   if (length(missing_dsets) > 0) {
-    stop("Datasets not found in preprocessed_data$data: ", paste(missing_dsets, collapse=", "))
+    stop("Datasets not found in preprocessed_data: ", paste(missing_dsets, collapse=", "))
   }
   # Validate reference_fitness
   if (!is.null(reference_fitness)) {
@@ -121,6 +121,7 @@ biodiscvr_multicohort <- function(preprocessed_data,
   } else {
     warning("Argument 'reference_fitness' not provided. Using equal weights (1) for all datasets in fitness aggregation.", call. = FALSE)
     reference_fitness <- rep(1, length(datasets_to_run)) # Default: vector of 1
+    names(reference_fitness) = datasets_to_run
   }
   
   # Other validations (copy/adapt from biodiscvr_single)
@@ -164,201 +165,190 @@ biodiscvr_multicohort <- function(preprocessed_data,
   
   
   
-  # --- Find Common Features Across All Datasets to Run ---
-  # This happens *before* looping through individual datasets for GA runs
   
-  # Initial check for dataset existence (assuming this happened earlier as per your example)
-  # missing_dsets <- setdiff(datasets_to_run, names(preprocessed_data$data))
-  # if (length(missing_dsets) > 0) stop(...)
   
-  id_col <- config$preprocessing$id_column %||% "RID" # Get ID column name
+  
+  # --- *** NEW: Pre-GA Data Check Across Cohorts *** ---
+  message("--- Performing Pre-GA Data Sufficiency Check Across Cohorts ---")
+  min_rows_threshold <- 10 # Use consistent thresholds (or get from config?)
+  min_group_members_threshold <- 5
+  target_group_dx_val <- if(group == "CI") 1L else 0L
+  valid_datasets_for_mc <- character(0) # Keep track of datasets passing the check
+  
+  for (dset_name in datasets_to_run) {
+    current_data_list <- preprocessed_data[[dset_name]]
+    
+    # Check if essential 'data' table exists and has required columns
+    if (!"data" %in% names(current_data_list) || !is.data.frame(current_data_list$data) ||
+        !all(c(id_col, "DX", "AB") %in% names(current_data_list$data))) {
+      warning(sprintf("Dataset '%s': Skipping pre-check due to missing 'data' table or required columns (ID, DX, AB).", dset_name), call. = FALSE)
+      next # Cannot check this dataset
+    }
+    
+    data_clinical <- current_data_list$data
+    
+    # Filter for the target group and AB status needed for evaluation
+    initial_group_data_for_eval <- data_clinical |>
+      dplyr::filter(.data$DX == target_group_dx_val, .data$AB == TRUE, !is.na(.data$AB))
+    
+    n_initial_group_rows <- nrow(initial_group_data_for_eval)
+    n_initial_group_ids <- dplyr::n_distinct(initial_group_data_for_eval[[id_col]])
+    
+    # Check if sufficient data exists for this dataset/group combination
+    if (n_initial_group_ids >= min_group_members_threshold && n_initial_group_rows >= min_rows_threshold) {
+      message(sprintf("   - Dataset '%s': Sufficient data found for Group '%s' (%d IDs, %d rows).",
+                      dset_name, group, n_initial_group_ids, n_initial_group_rows))
+      valid_datasets_for_mc <- c(valid_datasets_for_mc, dset_name) # Add to valid list
+    } else {
+      warning(sprintf("Dataset '%s', Group '%s': Insufficient initial data for multi-cohort fitness evaluation (Found %d IDs / %d rows, need >= %d IDs / %d rows with DX=%d, AB=TRUE). Excluding from multi-cohort run.",
+                      dset_name, group, n_initial_group_ids, n_initial_group_rows, min_group_members_threshold, min_rows_threshold, target_group_dx_val), call. = FALSE)
+    }
+  } # End loop checking datasets
+  
+  # --- Check if enough datasets remain ---
+  min_required_cohorts <- 2 # Define minimum needed for multi-cohort analysis
+  if (length(valid_datasets_for_mc) < min_required_cohorts) {
+    warning(sprintf("Insufficient number of datasets (%d) passed the pre-GA data check for Group '%s' (minimum required: %d). Skipping multi-cohort GA.",
+                    length(valid_datasets_for_mc), group, min_required_cohorts), call. = FALSE)
+    
+    # --- Construct partial result row indicating skip ---
+    # (Similar structure to the one in biodiscvr_single's skip logic)
+    result_row <- data.frame(
+      timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+      experiment_tag = experiment_tag %||% NA_character_,
+      # discovery_dataset field doesn't apply here, use datasets_included
+      datasets_included = paste(datasets_to_run, collapse = "|"), # Original requested
+      group_evaluated = group,
+      bilateral = bilateral,
+      fitness_aggregation = "skipped", # Indicate skip
+      fitness_value_aggregated = NA_real_,
+      regs_numerator = "SKIPPED_INSUFFICIENT_COHORTS",
+      regs_denominator = "SKIPPED_INSUFFICIENT_COHORTS",
+      var_composition = var_composition,
+      reference_vector = "SKIPPED_INSUFFICIENT_COHORTS",
+      # Add NA placeholders for metrics if your CSV expects them
+      Rep = NA_real_, SepAB = NA_real_, SSE = NA_real_,
+      # Add NA GA params
+      ga_type = "skipped", ga_popSize = NA, ga_maxiter = NA, ga_seed_used = ga_seed %||% NA, ga_runtime_sec = 0,
+      stringsAsFactors = FALSE
+    )
+    
+    # --- Append skip info to CSV (Optional) ---
+    if (!is.null(output_csv_name)) {
+      # ... (logic to ensure output_dir exists and call .append_to_csv) ...
+      output_dir <- dirname(output_csv_name) # Assuming output_csv_name is the full path
+      if (!dir.exists(output_dir)) { dir.create(output_dir, recursive = TRUE, showWarnings = FALSE) }
+      if(dir.exists(output_dir)){ .append_to_csv(result_row, output_csv_name) }
+      else { warning("Failed to create output directory '", output_dir, "'. Cannot write skipped MC CSV.", call.=FALSE) }
+    }
+    
+    # --- Return indicating skip ---
+    # Return NULL as the main function failed to proceed
+    return(NULL)
+  } else {
+    # --- Update datasets_to_run for the rest of the function ---
+    # Only proceed with the datasets that passed the check
+    message(sprintf("Proceeding with multi-cohort analysis for Group '%s' using %d valid datasets: %s",
+                    group, length(valid_datasets_for_mc), paste(valid_datasets_for_mc, collapse=", ")))
+    datasets_to_run <- valid_datasets_for_mc # IMPORTANT: Overwrite the list for subsequent steps
+    
+    # Also need to filter the reference_fitness vector if it was provided
+    if (!is.null(reference_fitness)) {
+      original_names <- names(reference_fitness) # Assumes it was named by dataset
+      if (is.null(original_names)) stop("Provided 'reference_fitness' must be a named vector.")
+      keep_indices <- original_names %in% datasets_to_run
+      reference_fitness <- reference_fitness[keep_indices]
+      # Re-normalize weights if needed (optional, depends on aggregation method)
+      # if(sum(reference_fitness) > 0) reference_fitness <- reference_fitness / sum(reference_fitness)
+      # else reference_fitness <- rep(1/length(reference_fitness), length(reference_fitness))
+      message(sprintf("   - Filtered reference_fitness vector to match %d valid datasets.", length(reference_fitness)))
+    }
+  }
+  # --- *** END: Pre-GA Data Check Across Cohorts *** ---
+  
+  
+
+  
+  # --- Optimized Version ---
+  
+  message("Identifying common features across specified datasets...")
+  id_col <- config$preprocessing$id_column %||% "RID"
+  
+  # Initialize common features tracking
   common_features <- NULL
   processed_at_least_one <- FALSE
   
-  message("Identifying common features across specified datasets...")
   for (dset_name in datasets_to_run) {
-    dset_data_list <- preprocessed_data$data[[dset_name]]
+    dset_data_list <- preprocessed_data[[dset_name]]
     
+    # Ensure dataset contains expected data
     if (!"data_suv_bi" %in% names(dset_data_list) || is.null(dset_data_list$data_suv_bi)) {
-      warning(sprintf("Dataset '%s' is missing 'data_suv_bi'. It cannot be used to determine common features.", dset_name), call. = FALSE)
-      next # Skip this dataset for feature intersection
+      warning(sprintf("Dataset '%s' is missing 'data_suv_bi'. Skipping.", dset_name), call. = FALSE)
+      next
     }
     
-    current_features_all <- names(dset_data_list$data_suv_bi)
-    # Exclude the ID column from the list of potential features
-    current_features_valid <- setdiff(current_features_all, id_col)
+    # Extract valid features
+    current_features_valid <- setdiff(names(dset_data_list$data_suv_bi), id_col)
     
     if (length(current_features_valid) == 0) {
-      warning(sprintf("Dataset '%s' has no valid feature columns in 'data_suv_bi' (excluding ID column).", dset_name), call. = FALSE)
-      next # Skip this dataset
+      warning(sprintf("Dataset '%s' has no valid feature columns in 'data_suv_bi'. Skipping.", dset_name), call. = FALSE)
+      next
     }
     
+    # Establish common features
     if (!processed_at_least_one) {
-      # Initialize with features from the first valid dataset
       common_features <- current_features_valid
       processed_at_least_one <- TRUE
     } else {
-      # Find intersection with features from subsequent datasets
       common_features <- intersect(common_features, current_features_valid)
     }
     
-    # Optional: Early exit if intersection becomes empty
+    # Early exit if intersection is empty
     if (length(common_features) == 0) {
-      warning("No common features found across all specified datasets after processing dataset '", dset_name, "'. Cannot proceed with fixed region validation or GA.", call.=FALSE)
-      # Handle appropriately - maybe stop or return NULL from the multicohort function
-      # For now, we'll let it continue and the fixed region check below will fail if needed
-      break # No need to check further datasets if intersection is already empty
+      stop(sprintf("No common features remain after processing '%s'. Cannot proceed.", dset_name))
     }
-  } # End loop finding common features
-  
-  if (!processed_at_least_one) {
-    stop("None of the specified datasets had valid 'data_suv_bi' data to determine common features.")
-  }
-  if (length(common_features) == 0) {
-    stop("No common features were found across all specified datasets. Cannot proceed.")
   }
   
-  message(sprintf("   - Found %d common features across %d dataset(s).", length(common_features), length(datasets_to_run)))
+  # Ensure at least one dataset was processed
+  if (!processed_at_least_one || length(common_features) == 0) {
+    stop("No common features found across all datasets. Analysis cannot proceed.")
+  }
   
+  message(sprintf("Found %d common features across %d datasets.", length(common_features), length(datasets_to_run)))
   
-  # --- Validate and Filter Fixed Regions Against COMMON Features ---
-  # Work with copies initially
-  valid_fixed_num_regs <- fixed_numerator_regs
-  valid_fixed_den_regs <- fixed_denominator_regs
-  
-  if (!is.null(fixed_numerator_regs)) {
-    initial_fixed_num <- fixed_numerator_regs
-    # Keep only those fixed regions that are present in ALL datasets
-    valid_fixed_num_regs <- intersect(initial_fixed_num, common_features)
-    missing_or_excluded_num <- setdiff(initial_fixed_num, valid_fixed_num_regs)
+  # --- Validate Fixed Regions ---
+  validate_fixed_regions <- function(fixed_regs, common_features, type) {
+    if (is.null(fixed_regs)) return(NULL)
     
-    if (length(missing_or_excluded_num) > 0) {
-      warning(sprintf("Provided fixed_numerator_regs not found across ALL specified datasets and were excluded: %s",
-                      paste(missing_or_excluded_num, collapse = ", ")), call. = FALSE)
-    }
-    if (length(valid_fixed_num_regs) == 0) {
-      warning("None of the provided fixed_numerator_regs were found across ALL specified datasets. Cannot proceed with fixed numerator.", call. = FALSE)
-      # Depending on your logic, you might stop here, or just prevent skipping the GA later
-      # Let's assume we MUST have valid regions if fixed regs are provided.
-      stop("Cannot proceed without any valid fixed numerator regions common across all datasets.")
-    }
-    message(sprintf("   - Using %d valid fixed numerator regions (common across all datasets).", length(valid_fixed_num_regs)))
-  }
-  
-  if (!is.null(fixed_denominator_regs)) {
-    initial_fixed_den <- fixed_denominator_regs
-    # Keep only those fixed regions that are present in ALL datasets
-    valid_fixed_den_regs <- intersect(initial_fixed_den, common_features)
-    missing_or_excluded_den <- setdiff(initial_fixed_den, valid_fixed_den_regs)
+    valid_regs <- intersect(fixed_regs, common_features)
+    excluded_regs <- setdiff(fixed_regs, valid_regs)
     
-    if (length(missing_or_excluded_den) > 0) {
-      warning(sprintf("Provided fixed_denominator_regs not found across ALL specified datasets and were excluded: %s",
-                      paste(missing_or_excluded_den, collapse = ", ")), call. = FALSE)
-    }
-    if (length(valid_fixed_den_regs) == 0) {
-      warning("None of the provided fixed_denominator_regs were found across ALL specified datasets. Cannot proceed with fixed denominator.", call. = FALSE)
-      stop("Cannot proceed without any valid fixed denominator regions common across all datasets.")
-    }
-    message(sprintf("   - Using %d valid fixed denominator regions (common across all datasets).", length(valid_fixed_den_regs)))
-  }
-  
-  # --- Reassign the validated & filtered regions back to the main variables ---
-  # These validated lists (or NULL) will be used when deciding whether to skip GA
-  # and potentially passed down to single-dataset functions if needed.
-  fixed_numerator_regs <- valid_fixed_num_regs
-  fixed_denominator_regs <- valid_fixed_den_regs
-  # --- End of Fixed Regions Prep for Multi-Cohort ---
-  
-  # --- Determine Features for GA (use common features) ---
-  # If GA needs to run (i.e., not both num/den fixed), it should operate only on common features
-  features <- common_features
-  if (length(features) == 0) {
-    # This case should have been caught earlier, but double-check
-    stop("Cannot run GA as no common features for exploration were identified across datasets.")
-  }
-  
-  
-  
-  
-  # --- Feature Identification (Common Features) ---
-  message("Identifying common features across datasets: ", paste(datasets_to_run, collapse=", "))
-  # ... (Keep the logic to find common features `features_internal` as in previous version) ...
-  common_features_list <- list()
-  first_dataset_features_found <- FALSE
-  valid_datasets_to_run <- datasets_to_run # Keep track of datasets we can actually use
-  for (dset_name in datasets_to_run) {
-    dset_data <- preprocessed_data$data[[dset_name]]
-    if (is.null(dset_data$data_suv_bi)) {
-      warning(sprintf("Dataset '%s' missing 'data_suv_bi'. Skipping.", dset_name), call.=FALSE)
-      valid_datasets_to_run <- setdiff(valid_datasets_to_run, dset_name)
-      next
-    }
-    current_suv_data <- dset_data$data_suv_bi
-    potential_features <- setdiff(names(current_suv_data), id_col)
-    is_numeric_col <- sapply(current_suv_data[, potential_features, drop = FALSE], is.numeric)
-    current_features <- potential_features[is_numeric_col]
-    
-    if(!is.null(fixed_numerator_regs)) {
-      current_features <- current_features[!(current_features %in% fixed_numerator_regs)]
-    } else if(!is.null(fixed_denominator_regs)) {
-      current_features <- current_features[!(current_features %in% fixed_denominator_regs)]
+    if (length(excluded_regs) > 0) {
+      warning(sprintf("Excluded %s not found in all datasets: %s", type, paste(excluded_regs, collapse = ", ")), call. = FALSE)
     }
     
-    if (!first_dataset_features_found && length(current_features) > 0) {
-      common_features_list[[dset_name]] <- current_features
-      first_dataset_features_found <- TRUE
-    } else if (first_dataset_features_found) {
-      previous_common <- Reduce(intersect, common_features_list)
-      current_common <- intersect(previous_common, current_features)
-      if (length(current_common) == 0) {
-        stop("No common numeric features remaining after processing dataset: ", dset_name)
-      }
-      common_features_list[[dset_name]] <- current_common
-    } else if (length(current_features) == 0) {
-      warning(sprintf("Dataset '%s' has no numeric SUV features. Skipping.", dset_name), call.=FALSE)
-      valid_datasets_to_run <- setdiff(valid_datasets_to_run, dset_name)
-      next
+    if (length(valid_regs) == 0) {
+      stop(sprintf("No valid %s common across all datasets. Cannot proceed.", type))
     }
+    
+    message(sprintf("Using %d valid %s (common across all datasets).", length(valid_regs), type))
+    return(valid_regs)
   }
-  if(length(common_features_list) == 0) stop("No datasets remaining with usable SUV features.")
-  features_internal <- common_features_list[[length(common_features_list)]]
-  n_features <- length(features_internal)
-  if (n_features == 0) stop("No common numeric features identified across valid datasets.")
-  # Adjust datasets_to_run and reference_fitness if some were skipped
-  if(!identical(sort(datasets_to_run), sort(valid_datasets_to_run))) {
-    warning("Some datasets were skipped due to missing data/features. Analysis will proceed with: ",
-            paste(valid_datasets_to_run, collapse=", "), call.=FALSE)
-    # Filter reference_fitness to match valid datasets
-    original_indices <- match(valid_datasets_to_run, datasets_to_run)
-    reference_fitness <- reference_fitness[original_indices]
-    # Re-normalize weights if any were removed
-    if(sum(reference_fitness) > 0) {
-      reference_fitness <- reference_fitness / sum(reference_fitness)
-    } else { # Handle case where remaining weights sum to 0 (unlikely)
-      reference_fitness <- rep(1/length(valid_datasets_to_run), length(valid_datasets_to_run))
-    }
-    datasets_to_run <- valid_datasets_to_run
-  }
-  message(sprintf("Using %d common features for multi-cohort analysis.", n_features))
-  # User override for features
+  
+  fixed_numerator_regs <- validate_fixed_regions(fixed_numerator_regs, common_features, "fixed numerator regions")
+  fixed_denominator_regs <- validate_fixed_regions(fixed_denominator_regs, common_features, "fixed denominator regions")
+  
+  # --- Determine Features for GA ---
+  # Adjust features if a user override is provided
   if (!is.null(features)) {
+    features <- setdiff(features, c(fixed_numerator_regs, fixed_denominator_regs))
+    features <- intersect(features, common_features)
     
-    if(!is.null(fixed_numerator_regs)) {
-      features <- features[!(features %in% fixed_numerator_regs)]
-    } else if(!is.null(fixed_denominator_regs)) {
-      features <- features[!(features %in% fixed_denominator_regs)]
-    }
+    if (length(features) == 0) stop("User-specified features do not overlap with common features.")
     
-    if (!all(features %in% features_internal)) {
-      warning("Provided 'features' contain items not common across all valid datasets. Using only the common subset.", call.=FALSE)
-      features_internal <- intersect(features, features_internal)
-      n_features <- length(features_internal)
-      if (n_features == 0) stop("Intersection of provided features and common features is empty.")
-    } else {
-      features_internal <- features
-      n_features <- length(features_internal)
-    }
-    message(sprintf("Using %d user-specified common features.", n_features))
+    n_features <- length(features)
+    
+    message(sprintf("Using %d user-specified common features.", length(features)))
   }
   
   
@@ -401,12 +391,12 @@ biodiscvr_multicohort <- function(preprocessed_data,
     
     for (i in seq_along(datasets_to_run_internal)) {
       dset_name_internal <- datasets_to_run_internal[i]
-      dataset_data_internal <- preprocessed_data_internal$data[[dset_name_internal]]
+      dataset_data_internal <- preprocessed_data_internal[[dset_name_internal]]
       
       fitness_value <- tryCatch({
         .calculate_fitness( # Call the package's internal function
           chromosome = chromosome,
-          features = features_internal,
+          features = features,
           fixed_numerator_regs = fixed_numerator_regs,
           fixed_denominator_regs = fixed_denominator_regs,
           var_composition = var_composition_internal,
@@ -562,8 +552,8 @@ biodiscvr_multicohort <- function(preprocessed_data,
   # --- Decode Best Chromosome (Logic from biodiscvr_single) ---
   best_regs_numerator <- character(0)
   best_regs_denominator <- character(0)
-  best_regs_numerator <- features_internal[best_chromosome < 1]
-  best_regs_denominator <- features_internal[best_chromosome > 2]
+  best_regs_numerator <- features[best_chromosome < 1]
+  best_regs_denominator <- features[best_chromosome > 2]
   
   # Override numerator if fixed_numerator_regs is provided
   if (!is.null(fixed_numerator_regs)) {
@@ -600,77 +590,127 @@ biodiscvr_multicohort <- function(preprocessed_data,
   
   # --- Re-evaluate Best Solution on Each Dataset ---
   message("--- Evaluating best solution on individual datasets ---")
-  per_dataset_results_list <- list()
+  per_dataset_results_list <- list() # Initialize list to store results rows
+  
   for (dset_name in datasets_to_run) {
-    message("  - Evaluating on: ", dset_name)
-    current_dset_data <- preprocessed_data$data[[dset_name]]
+    message(" - Evaluating on: ", dset_name)
+    current_dset_data_list <- preprocessed_data[[dset_name]] # Get the list for this dataset
+    
+    # Initialize metrics and status for this dataset
+    metrics <- stats::setNames(rep(NA_real_, 3), c("Rep", "SepAB", "SSE"))
+    eval_status <- "Evaluation Pending" # Initial status
     
     # --- Calculate biomarker value using BEST chromosome ---
     # Use the same function/logic as biodiscvr_single's re-evaluation
     # Assumes existence of internal .calculate_cvr or similar
     final_value <- tryCatch({
-      # Example call, replace with your actual calculation function
-      .calculate_cvr(best_chromosome, features = features_internal,
-                     dataset_cohort_data = current_dset_data, # Pass this dataset's data
-                     var_composition = var_composition,
-                     fixed_numerator_regs = fixed_numerator_regs,
-                     fixed_denominator_regs = fixed_denominator_regs)
-    }, error = function(e) { NULL })
+      # Example call, replace with your actual calculation function/logic
+      # This MUST be consistent with how value is calculated in fitness functions
+      .calculate_cvr(
+        chromosome = best_chromosome, # The best one found by multi-cohort GA
+        dataset_cohort_data = current_dset_data_list, # Pass this dataset's list
+        features = features, # Common features used in GA
+        var_composition = var_composition,
+        # Pass fixed regs used in THIS multi-cohort run (might be NULL)
+        fixed_numerator_regs = fixed_numerator_regs,
+        fixed_denominator_regs = fixed_denominator_regs,
+        verbose = FALSE # Typically keep internal calls non-verbose
+      )
+    }, error = function(e) {
+      warning(sprintf("Dataset '%s': Error during final value calculation for best solution: %s",
+                      dset_name, conditionMessage(e)), call.=FALSE)
+      return(NULL) # Return NULL on error
+    })
     
     if (is.null(final_value)) {
-      warning(sprintf("Dataset '%s': Failed final value calculation for best solution.", dset_name), call.=FALSE)
-      metrics <- stats::setNames(rep(NA_real_, 3), c("Rep", "SepAB", "SSE"))
+      warning(sprintf("Dataset '%s': Failed final value calculation for best solution. Metrics cannot be calculated.", dset_name), call.=FALSE)
+      eval_status <- "Biomarker Calculation Failed"
+      # metrics remain NA
     } else {
-      # # --- Prepare final data ---
-      # # (Logic copied from biodiscvr_single re-evaluation)
-      # final_data_prep <- data.frame(placeholder_id = current_dset_data$data_suv_bi[[id_col]], value = final_value)
-      # names(final_data_prep)[1] <- id_col
-      # final_data <- try(dplyr::left_join(final_data_prep, dplyr::select(current_dset_data$data, dplyr::all_of(required_clinical_cols)), by = id_col), silent=T)
-      # if(inherits(final_data, "try-error")) {
-      #   warning("Final merge failed for ", dset_name, call.=F); metrics <- stats::setNames(rep(NA_real_, 3), c("Rep", "SepAB", "SSE"))
-      # } else {
-      #   essential_eval_cols <- c("value", "time", id_col, "DX", "AB")
-      #   final_data <- stats::na.omit(final_data[, essential_eval_cols, drop = FALSE])
-      #   
-      #   # --- Get metrics using .feval_group ---
-      #   if(nrow(final_data) < 10 || sum(final_data$DX == (if(group=="CI") 1L else 0L), na.rm=TRUE) < 5 ) { # Added na.rm
-      #     warning(sprintf("Dataset '%s': Not enough final data/group members for metrics.", dset_name), call.=FALSE)
-      #     metrics <- stats::setNames(rep(NA_real_, 3), c("Rep", "SepAB", "SSE"))
-      #   } else {
-      #     metrics <- .feval_group(
-      #       data = final_data, group = group, eq_all = eq_all_internal, eq_group = eq_group_internal,
-      #       all_power_params = all_power_params_internal, lmer_control = lmer_control_internal
-      #     )
-      #   }
-      # }
-      
       # --- Prepare final data for evaluation ---
-      current_dset_data$data$value <- final_value
-      
-      # --- Get final metrics using .feval_group ---
-      if(nrow(current_dset_data$data) < 10 || sum(current_dset_data$data$DX == (if(group=="CI") 1L else 0L)) < 5 ) { # Check group size too
-        warning(sprintf("Dataset '%s', Group '%s': Not enough final data rows (%d) or group members to calculate metrics reliably.", paste(datasets_to_run, collapse="."), group, nrow(current_dset_data$data)), call.=FALSE)
-        metrics <- stats::setNames(rep(NA_real_, 3), c("Rep", "SepAB", "SSE"))
+      # Add the calculated 'value' column to the 'data' part for .feval_group
+      # Ensure essential columns exist in the clinical data part
+      required_clinical_cols <- c(id_col, "time", "DX", "AB") # Align with .feval_group needs
+      if (!"data" %in% names(current_dset_data_list) ||
+          !all(required_clinical_cols %in% names(current_dset_data_list$data))) {
+        warning(sprintf("Dataset '%s': Missing 'data' table or required clinical columns. Cannot calculate metrics.", dset_name), call.=FALSE)
+        eval_status <- "Missing Clinical Data"
+        # metrics remain NA
       } else {
-        metrics <- .feval_group(
-          data = current_dset_data$data, group = group, eq_all = eq_all_internal, eq_group = eq_group_internal,
-          all_power_params = all_power_params_internal, lmer_control = lmer_control_internal
-        )
-      }
-    }
+        final_data_for_eval <- current_dset_data_list$data
+        # Add/overwrite value column safely
+        if(nrow(final_data_for_eval) == length(final_value)) {
+          final_data_for_eval$value <- final_value
+        } else {
+          warning(sprintf("Dataset '%s': Length mismatch between final value (%d) and data rows (%d). Cannot merge for metrics.",
+                          dset_name, length(final_value), nrow(final_data_for_eval)), call.=FALSE)
+          eval_status <- "Value/Data Length Mismatch"
+          # metrics remain NA - skip to storing results
+          final_data_for_eval <- NULL # Prevent further processing
+        }
+        
+        if (!is.null(final_data_for_eval)) {
+          # Remove rows with NA in essential columns AFTER adding value
+          essential_eval_cols <- c("value", "time", id_col, "DX", "AB")
+          final_data_for_eval <- stats::na.omit(final_data_for_eval[, essential_eval_cols, drop = FALSE])
+          
+          # --- Get final metrics using .feval_group ---
+          min_rows_threshold <- 10 # Example threshold
+          min_group_members_threshold <- 5 # Example threshold
+          current_group_dx_val <- if(group == "CI") 1L else 0L
+          current_group_member_count <- sum(final_data_for_eval$DX == current_group_dx_val, na.rm = TRUE)
+          
+          if(nrow(final_data_for_eval) < min_rows_threshold || current_group_member_count < min_group_members_threshold ) {
+            warning(sprintf("Dataset '%s', Group '%s': Not enough final data rows (%d) or group members (%d) to calculate metrics reliably.",
+                            dset_name, group, nrow(final_data_for_eval), current_group_member_count), call.=FALSE)
+            eval_status <- "Insufficient Data for Metrics"
+            # metrics remain NA
+          } else {
+            # Attempt to calculate metrics
+            metrics_result <- try(.feval_group(
+              data = final_data_for_eval,
+              group = group,
+              eq_all = eq_all_internal, # Use internal formula objects
+              eq_group = eq_group_internal,
+              all_power_params = all_power_params_internal,
+              lmer_control = lmer_control_internal
+            ), silent = TRUE)
+            
+            if (inherits(metrics_result, "try-error")) {
+              warning(sprintf("Dataset '%s', Group '%s': .feval_group failed during re-evaluation. Error: %s",
+                              dset_name, group, conditionMessage(attr(metrics_result, "condition"))), call.=FALSE)
+              eval_status <- "Metrics Calculation Error"
+              # metrics remain NA
+            } else if (anyNA(metrics_result)) {
+              warning(sprintf("Dataset '%s', Group '%s': .feval_group returned NA values during re-evaluation.",
+                              dset_name, group), call.=FALSE)
+              eval_status <- "Metrics Calculation NA"
+              metrics <- metrics_result # Store the NAs
+            } else {
+              # Success!
+              metrics <- metrics_result
+              eval_status <- "Success"
+            }
+          } # End check for sufficient data
+        } # End if final_data_for_eval is valid
+      } # End check for clinical data validity
+    } # End check for final_value validity
     
-    # Store per-dataset metrics
+    # --- Store per-dataset metrics including status ---
     per_dataset_results_list[[dset_name]] <- data.frame(
       dataset = dset_name,
       group_evaluated = group,
+      status = eval_status, # Add the status column
       Rep = metrics["Rep"],
       SepAB = metrics["SepAB"],
       SSE = metrics["SSE"],
       stringsAsFactors = FALSE
     )
+    
   } # End loop re-evaluating datasets
   
-  # per_dataset_metrics_df <- dplyr::bind_rows(per_dataset_results_list)
+  # Convert the list to a single data frame
+  per_dataset_metrics_df <- dplyr::bind_rows(per_dataset_results_list)
   
   # --- Helper function for safe rounding and extraction ---
   extract_round_metric <- function(metric_list, metric_name, order, digits) {
@@ -753,14 +793,26 @@ biodiscvr_multicohort <- function(preprocessed_data,
   
   # --- Return Structured Results ---
   return(list(
-    ga_result_object = ga_result_obj,
-    best_solution = list(
-      numerator_regions = best_regs_numerator,
-      denominator_regions = best_regs_denominator,
-      chromosome_vector = best_chromosome
-    ),
-    aggregated_fitness = final_aggregated_fitness,
+    # result_row contains the main aggregated fitness, regions (string), GA params etc.
+    # This is the primary record for the CSV log.
     result_row = result_row,
-    per_dataset_metrics = per_dataset_results_list # Return calculated per-dataset metrics
+    best_regs_numerator = best_regs_numerator,
+    best_regs_denominator = best_regs_denominator
+    
+    # per_dataset_metrics provides the breakdown of performance on individual cohorts
+    # for the best multi-cohort solution. Essential for interpretation.
+    # per_dataset_metrics = per_dataset_metrics_df # Returned as data frame
+    
+    # Optionally include the decoded best solution if needed upstream, otherwise omit
+    # best_solution = list(
+    #   numerator_regions = best_regs_numerator, # Vector
+    #   denominator_regions = best_regs_denominator, # Vector
+    #   chromosome_vector = best_chromosome
+    # ),
+    
+    # Optionally include raw GA object if deep diagnostics are needed, otherwise omit
+    # ga_result_object = ga_result_obj
+    
+    # aggregated_fitness is already captured within result_row
   ))
 }

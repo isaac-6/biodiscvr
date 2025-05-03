@@ -1,0 +1,33 @@
+experiments:
+  FullCVR: # Experiment name
+    description: "Standard CVR discovery, no fixed regions"
+    fixed_numerator_regs: NULL
+    fixed_denominator_regs: NULL
+    run_second_iteration: FALSE # Not applicable
+
+  # FixedRef_Composite:
+  #   description: "Fix denominator to composote reference"
+  #   fixed_numerator_regs: NULL
+  #   fixed_denominator_regs: ["hemiwm", 
+  #        "whole_cerebellum",
+  #        "brainstem"]
+  #   run_second_iteration: TRUE # Trigger second iteration for this
+
+  # FixedRef_Cerebellum:
+  #   description: "Fix denominator to whole cerebellum"
+  #   fixed_numerator_regs: NULL
+  #   fixed_denominator_regs: ["whole_cerebellum"]
+  #   run_second_iteration: TRUE # Trigger second iteration for this
+
+  FixedTarget_Metatemp:
+    description: "Fix numerator to metatemporal"
+    fixed_numerator_regs: ["entorhinal",
+         "parahippocampal",
+         "amygdala",
+         "inferiortemporal",
+         "fusiform",
+         "middletemporal"]
+    fixed_denominator_regs: NULL
+    run_second_iteration: TRUE # Trigger second iteration for this
+
+  # Add more predefined fixed experiments here...

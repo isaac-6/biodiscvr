@@ -30,7 +30,7 @@ biodiscvr_multicohort(
 the potentially filtered \verb{$data} list for multiple cohorts and \verb{$config}.}
 
 \item{datasets_to_run}{Character vector. Names of the datasets within
-\code{preprocessed_data$data} to include in the multi-cohort fitness evaluation.}
+\code{preprocessed_data} to include in the multi-cohort fitness evaluation.}
 
 \item{group}{Character string. The group ("CU" or "CI") to use for evaluating
 fitness via the internal \code{.calculate_fitness} function within each cohort.}

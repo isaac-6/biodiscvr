@@ -243,11 +243,6 @@ biodiscvr_single <- function(dataset_data,
       features <- features[!(features %in% fixed_denominator_regs)]
     }
     
-    missing_features <- setdiff(features, names(data_suv))
-    if (length(missing_features) > 0) {
-      warning(sprintf("Dataset '%s': Specified features not found: %s. Cannot run GA.", dataset_name, paste(missing_features, collapse=", ")), call. = FALSE)
-      return(NULL)
-    }
     if (length(features) == 0) {
       warning(sprintf("Dataset '%s': No features provided or remaining. Cannot run GA.", dataset_name), call. = FALSE)
       return(NULL)
@@ -299,8 +294,74 @@ biodiscvr_single <- function(dataset_data,
   if (!all(required_clinical_cols %in% names(data_clinical))) {
     warning(sprintf("Dataset '%s': Clinical data missing required columns: %s. Cannot run GA.",
                     dataset_name, paste(setdiff(required_clinical_cols, names(data_clinical)), collapse=", ")), call. = FALSE)
-    return(NULL)
+    return(NULL) # Cannot proceed without essential clinical columns
   }
+  
+  # --- *** NEW: Pre-GA Data Check for Target Group *** ---
+  message(sprintf("   - Checking initial data sufficiency for Group '%s'...", group))
+  min_rows_threshold <- 10 # Use consistent thresholds
+  min_group_members_threshold <- 5
+  target_group_dx_val <- if(group == "CI") 1L else 0L
+  
+  # Check data specifically needed for the target group's evaluation by .feval_group
+  initial_group_data_for_eval <- data_clinical |>
+    dplyr::filter(.data$DX == target_group_dx_val, .data$AB == TRUE, !is.na(.data$AB))
+  
+  n_initial_group_rows <- nrow(initial_group_data_for_eval)
+  n_initial_group_ids <- dplyr::n_distinct(initial_group_data_for_eval[[id_col]]) # Count unique IDs
+  
+  # Check if sufficient data exists BEFORE running GA
+  # Use n_initial_group_ids check primarily, as row count can be misleading with repeated measures
+  if (n_initial_group_ids < min_group_members_threshold) {
+    warning(sprintf("Dataset '%s', Group '%s': Insufficient initial data for reliable fitness evaluation (Found %d unique IDs, need >= %d with DX=%d, AB=TRUE). Skipping GA.",
+                    dataset_name, group, n_initial_group_ids, min_group_members_threshold, target_group_dx_val), call. = FALSE)
+    
+    # --- Construct partial result row indicating skip ---
+    result_row <- data.frame(
+      timestamp = format(Sys.time(), "%Y-%m-%d %H:%M:%S"),
+      experiment_tag = experiment_tag %||% NA_character_,
+      dataset = dataset_name,
+      group_evaluated = group,
+      bilateral = bilateral,
+      var_composition = var_composition,
+      fitness_value = NA_real_, # No fitness calculated
+      Rep = NA_real_,
+      SepAB = NA_real_,
+      SSE = NA_real_,
+      regs_numerator = "SKIPPED_INSUFFICIENT_DATA",
+      regs_denominator = "SKIPPED_INSUFFICIENT_DATA",
+      reference_vector = "SKIPPED_INSUFFICIENT_DATA", # Assuming this relates to regs
+      ga_type = "skipped",
+      ga_popSize = NA_integer_,
+      ga_maxiter = NA_integer_,
+      ga_seed_used = ga_seed %||% NA_real_, # Log seed if provided, else NA
+      ga_runtime_sec = 0, # No runtime
+      stringsAsFactors = FALSE
+    )
+    
+    # --- Append to CSV (Optional) ---
+    # Still log this skipped run if path provided
+    if (!is.null(output_csv_path)) {
+      output_dir <- dirname(output_csv_path)
+      if (!dir.exists(output_dir)) { dir.create(output_dir, recursive = TRUE, showWarnings = FALSE) }
+      if(dir.exists(output_dir)){ .append_to_csv(result_row, output_csv_path) }
+      else { warning("Failed to create output directory '", output_dir, "'. Cannot write skipped CSV.", call.=FALSE) }
+    }
+    
+    # --- Return structure indicating skip ---
+    # Return NULL or a list containing only the result_row?
+    # Let's return the list structure but with NULLs/NAs for consistency
+    return(list(
+      result_row = result_row,
+      best_regs_numerator = NULL,
+      best_regs_denominator = NULL,
+      best_solution_vector = NULL
+    ))
+  } else {
+    message(sprintf("   - Found %d initial unique IDs for Group '%s' evaluation. Proceeding with GA.", n_initial_group_ids, group))
+  }
+  # --- *** END: Pre-GA Data Check *** ---
+
   
   # ============================================================
   # == WRAPPER FITNESS FUNCTION for GA::ga ==
@@ -507,8 +568,10 @@ biodiscvr_single <- function(dataset_data,
     
     # --- Get final metrics using .feval_group ---
     if(nrow(dataset_data$data) < 10 || sum(dataset_data$data$DX == (if(group=="CI") 1L else 0L)) < 5 ) { # Check group size too
-      warning(sprintf("Dataset '%s', Group '%s': Not enough final data rows (%d) or group members to calculate metrics reliably.", dataset_name, group, nrow(dataset_data$data)), call.=FALSE)
+      warning(sprintf("Dataset '%s', Group '%s': Not enough final data rows (%d) or group members to calculate metrics reliably.", dataset_name, group, sum(dataset_data$data$DX == (if(group=="CI") 1L else 0L))), call.=FALSE)
       final_metrics <- stats::setNames(rep(NA_real_, 3), c("Rep", "SepAB", "SSE"))
+      # this should skip any further calculations
+      
     } else {
       final_metrics <- .feval_group(
         data = dataset_data$data, group = group, eq_all = eq_all, eq_group = eq_group,
@@ -588,8 +651,17 @@ biodiscvr_single <- function(dataset_data,
     }
   }
   
-  # --- 11. Return Result Row ---
-  return(result_row)
+  # # --- 11. Return Result Row ---
+  # return(result_row)
+  # --- 11. Return Structured Results List ---
+  return(list(
+    result_row = result_row, # The data frame row for the CSV
+    ga_obj = ga_result_obj,
+    best_regs_numerator = best_regs_numerator, # Vector of numerator regions
+    best_regs_denominator = best_regs_denominator # Vector of denominator regions
+    # best_solution_vector = best_chromosome # The raw chromosome vector from GA
+    # Add other elements if needed by run_experiments later
+  ))
 }
 
 
