@@ -170,8 +170,8 @@ biodiscvr_multicohort <- function(preprocessed_data,
   
   # --- *** NEW: Pre-GA Data Check Across Cohorts *** ---
   message("--- Performing Pre-GA Data Sufficiency Check Across Cohorts ---")
-  min_rows_threshold <- 10 # Use consistent thresholds (or get from config?)
-  min_group_members_threshold <- 5
+  min_rows_threshold <- 30 # Use consistent thresholds (or get from config?)
+  min_group_members_threshold <- 20
   target_group_dx_val <- if(group == "CI") 1L else 0L
   valid_datasets_for_mc <- character(0) # Keep track of datasets passing the check
   
@@ -655,8 +655,8 @@ biodiscvr_multicohort <- function(preprocessed_data,
           final_data_for_eval <- stats::na.omit(final_data_for_eval[, essential_eval_cols, drop = FALSE])
           
           # --- Get final metrics using .feval_group ---
-          min_rows_threshold <- 10 # Example threshold
-          min_group_members_threshold <- 5 # Example threshold
+          min_rows_threshold <- 30 # Example threshold
+          min_group_members_threshold <- 20 # Example threshold
           current_group_dx_val <- if(group == "CI") 1L else 0L
           current_group_member_count <- sum(final_data_for_eval$DX == current_group_dx_val, na.rm = TRUE)
           

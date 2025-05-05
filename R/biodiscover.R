@@ -299,8 +299,8 @@ biodiscvr_single <- function(dataset_data,
   
   # --- *** NEW: Pre-GA Data Check for Target Group *** ---
   message(sprintf("   - Checking initial data sufficiency for Group '%s'...", group))
-  min_rows_threshold <- 10 # Use consistent thresholds
-  min_group_members_threshold <- 5
+  min_rows_threshold <- 30 # Use consistent thresholds
+  min_group_members_threshold <- 20
   target_group_dx_val <- if(group == "CI") 1L else 0L
   
   # Check data specifically needed for the target group's evaluation by .feval_group
