@@ -32,7 +32,7 @@
 #'
 #' @keywords internal
 .calculate_cvr <- function(chromosome,
-                           dataset_cohort_data,
+                           dataset_cohort_data, # folder with data.csv and data_suv_bi.csv
                            features,
                            var_composition,
                            fixed_numerator_regs = NULL,
@@ -607,8 +607,4 @@ calculate_reference_direction <- function(reference_dna,
   if(verbose) cat("Finished calculating reference direction.\n")
   return(reference_sse_vector)
 }
-
-
-
-
 

@@ -228,30 +228,38 @@
   if (nrow(data_filtered_sep) > 0) {
     model_sep <- try(lme4::lmer(eq_all, data = data_filtered_sep, REML = TRUE, control = lmer_control), silent = TRUE)
     
-    if (!inherits(model_sep, "try-error")) {
-      eSepAB <- .fSepAB(model_sep) # Calculate point estimate
-      if (is.na(eSepAB)) {
-        warning(sprintf("Group '%s': Could not extract point estimate for 'time:AB' t-value.", group), call. = FALSE)
-      }
-      
-      # --- Bootstrap for Separation CI ---
-      # Consider parallel options if needed: parallel = "multicore" or "snow"
-      b_sep <- try(lme4::bootMer(model_sep, FUN = .fSepAB, nsim = nsim, type = "parametric", use.u = FALSE, re.form=NA), silent = TRUE)
-      # use.u=FALSE, re.form=NA are often recommended for parametric bootstrap stability
-      
-      if (!inherits(b_sep, "try-error")) {
-        ci_sep <- safe_quantile(b_sep$t, probs = c(0.025, 0.975))
-        eSepAB.lower <- ci_sep[1]
-        eSepAB.upper <- ci_sep[2]
-      } else {
-        warning(sprintf("Group '%s': bootMer failed for separation (SepAB). CI calculation skipped. Error: %s",
-                        group, conditionMessage(attr(b_sep, "condition"))), call.=FALSE)
-      }
-      
+    if (!(sum(data_filtered_sep$AB == 0) > 30)) {
+      eSepAB <- NA
+      eSepAB.lower <- NA
+      eSepAB.upper <- NA
     } else {
-      warning(sprintf("Group '%s': Failed to fit separation model (eq_all), cannot calculate SepAB or CIs. Error: %s",
-                      group, conditionMessage(attr(model_sep, "condition"))), call. = FALSE)
+      if (!inherits(model_sep, "try-error")) {
+        eSepAB <- .fSepAB(model_sep) # Calculate point estimate
+        if (is.na(eSepAB)) {
+          warning(sprintf("Group '%s': Could not extract point estimate for 'time:AB' t-value.", group), call. = FALSE)
+        }
+        
+        # --- Bootstrap for Separation CI ---
+        # Consider parallel options if needed: parallel = "multicore" or "snow"
+        b_sep <- try(lme4::bootMer(model_sep, FUN = .fSepAB, nsim = nsim, type = "parametric", use.u = FALSE, re.form=NA), silent = TRUE)
+        # use.u=FALSE, re.form=NA are often recommended for parametric bootstrap stability
+        
+        if (!inherits(b_sep, "try-error")) {
+          ci_sep <- safe_quantile(b_sep$t, probs = c(0.025, 0.975))
+          eSepAB.lower <- ci_sep[1]
+          eSepAB.upper <- ci_sep[2]
+        } else {
+          warning(sprintf("Group '%s': bootMer failed for separation (SepAB). CI calculation skipped. Error: %s",
+                          group, conditionMessage(attr(b_sep, "condition"))), call.=FALSE)
+        }
+        
+      } else {
+        warning(sprintf("Group '%s': Failed to fit separation model (eq_all), cannot calculate SepAB or CIs. Error: %s",
+                        group, conditionMessage(attr(model_sep, "condition"))), call. = FALSE)
+      }
     }
+    
+    
   } else {
     warning(sprintf("Group '%s': No non-NA AB data for separation model.", group), call. = FALSE)
   }
