@@ -218,7 +218,7 @@ if (!is.null(preprocessed_data_list)) {
 
 ## Step 5: Running Discovery Experiments
 
-Runs the experiments defined in the package-internal `experiments.yaml`. **This step can take a long time.** For this vignette, the chunk is set to `eval=FALSE`. Copy the code and run it in your own script for actual analysis.
+Runs the experiments defined in the package-internal `experiments.yaml`. **This step can take about 1h (depending on the CPU, parallelisation, and experimental design).** For this vignette, the chunk is set to `eval=FALSE`. Copy the code and run it in your own script for actual analysis.
 
 ```{r run_experiments, eval=FALSE}
 # Ensure the experiments config file exists
