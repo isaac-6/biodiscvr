@@ -1,0 +1,126 @@
+# List of biomarkers from the literature
+# 
+# 
+#
+# IMPORTANT:
+# 1. Region names used here MUST EXACTLY MATCH the column names in your data_suv_bi data frames.
+# 2. For "composite" references or "mean of cortical regions", you MUST list the specific regions.
+# 3. var_composition: 0=Volume-Weighted, 1=Arithmetic Mean, 2=Weighted Mean (needs weights), 3=Geometric Mean
+
+biomarkers: # Top-level key
+
+  # --- Based on Mattsson-Carlgren et al., Sci Adv 2020 (https://www.science.org/doi/10.1126/sciadv.aaz2387) ---
+  # Assuming "inf.cereb.gm" is a single region in your data, e.g., "Inferior_Cerebellar_GrayMatter"
+  # ADAPT "Inferior_Cerebellar_GrayMatter" to your actual region name.
+  Leuzy_Entorhinal_InfCerebGM:
+    name: "Leuzy_Entorhinal_InfCerebGM"
+    description: "Entorhinal Cortex / Inferior Cerebellar Gray Matter (Mattsson-Carlgren et al., Sci Adv 2020)"
+    source_citation: "Leuzy et al., Sci Adv 2019, doi:10.1126/sciadv.aaz2387"
+    numerator_regions: ["Entorhinal"] # ADAPT "Entorhinal" to your region name
+    denominator_regions: ["Inferior_Cerebellar_GrayMatter"] # ADAPT
+    var_composition: 1 # Filler. This is a special method with its own function
+
+  Leuzy_InfTemporal_InfCerebGM:
+    name: "Leuzy_InfTemporal_InfCerebGM"
+    description: "Inferior Temporal Cortex / Inferior Cerebellar Gray Matter (Mattsson-Carlgren et al., Sci Adv 2020)"
+    source_citation: "Leuzy et al., Sci Adv 2019, doi:10.1126/sciadv.aaz2387"
+    numerator_regions: ["InferiorTemporal"] # ADAPT
+    denominator_regions: ["Inferior_Cerebellar_GrayMatter"] # ADAPT
+    var_composition: 1
+
+  # "Braak IV-V / inf.cereb.gm" - This requires defining Braak IV-V regions
+  # Let's assume these are the regions for stages 4 & 5 from your previous code
+  # You MUST verify and adapt these region names.
+  Leuzy_BraakIV_V_InfCerebGM:
+    name: "Leuzy_BraakIV_V_InfCerebGM"
+    description: "Composite of Braak Stage IV & V regions / Inferior Cerebellar Gray Matter (Mattsson-Carlgren et al., Sci Adv 2020)"
+    source_citation: "Leuzy et al., Sci Adv 2019, doi:10.1126/sciadv.aaz2387"
+    numerator_regions: [
+      "caudalanteriorcingulate", "frontalpole", "insula", "lateralorbitofrontal",
+      "medialorbitofrontal", "parsopercularis", "parsorbitalis", "parstriangularis",
+      "rostralanteriorcingulate", "rostralmiddlefrontal", "superiorfrontal", # Stage IV
+      "cuneus", "lingual", "paracentral", "pericalcarine", "postcentral", "transversetemporal" # Stage V
+    ] # ADAPT ALL THESE REGION NAMES
+    denominator_regions: ["Inferior_Cerebellar_GrayMatter"] # ADAPT
+    var_composition: 1 # Arithmetic mean of the numerator regions
+
+  # "metatemp / inf.cereb.gm" - "metatemp" needs specific region definitions
+  # Example: Assuming metatemporal is entorhinal, parahippocampal, fusiform
+  Leuzy_MetaTemporal_InfCerebGM:
+    name: "Leuzy_MetaTemporal_InfCerebGM"
+    description: "Meta-Temporal Composite / Inferior Cerebellar Gray Matter (Mattsson-Carlgren et al., Sci Adv 2020)"
+    source_citation: "Leuzy et al., Sci Adv 2019, doi:10.1126/sciadv.aaz2387"
+    numerator_regions: ["Entorhinal", "Parahippocampal", "Fusiform"] # ADAPT
+    denominator_regions: ["Inferior_Cerebellar_GrayMatter"] # ADAPT
+    var_composition: 1
+
+  # "DDS / inf.cereb.gm" - DDS (Disease Duration Score or similar) is often a calculated score,
+  # not a direct SUVR ratio. If it's a ratio of specific regions, define them.
+  # If it's a different calculation method, we'd need to handle it like Braak staging.
+  # For now, assuming it's a placeholder for a specific region set.
+  # Leuzy_DDS_InfCerebGM:
+  #   name: "Leuzy_DDS_InfCerebGM"
+  #   description: "DDS Regions / Inferior Cerebellar Gray Matter (Leuzy et al., 2019)"
+  #   source_citation: "Leuzy et al., Sci Adv 2019, doi:10.1126/sciadv.aaz2387"
+  #   numerator_regions: ["Region_For_DDS_1", "Region_For_DDS_2"] # *** DEFINE DDS REGIONS ***
+  #   denominator_regions: ["Inferior_Cerebellar_GrayMatter"] # ADAPT
+  #   var_composition: 1
+
+
+  # --- Based on Schwarz et al. (Conceptual - ADAPT REGIONS) ---
+  # "metatemp / composite" - Need to define the "composite" reference
+  # Example: Assuming "composite" reference is whole cerebellum or similar
+  Schwarz_MetaTemporal_CompositeRef:
+    name: "Schwarz_MetaTemporal_CompositeRef"
+    description: "Meta-Temporal Composite / Custom Composite Reference (Schwarz et al.)"
+    source_citation: "Schwarz et al. (Provide specific paper if known)"
+    numerator_regions: ["Entorhinal", "Parahippocampal", "Fusiform"] # ADAPT "metatemp"
+    denominator_regions: ["Whole_Cerebellum_GM", "Whole_Cerebellum_WM"] # *** DEFINE COMPOSITE REFERENCE REGIONS ***
+    var_composition: 1
+
+
+  # --- Based on Mattsson et al., Sci Transl Med 2016 (https://www.science.org/doi/full/10.1126/scitranslmed.aaf2362) ---
+  # "mean of cortical regions / cerebellar gray matter"
+  # You MUST list the specific cortical regions. Example uses common AD signature regions.
+  Mattsson_CorticalMean_CerebGM:
+    name: "Mattsson_CorticalMean_CerebGM"
+    description: "Mean of specific cortical regions / Cerebellar Gray Matter (Mattsson et al., 2016)"
+    source_citation: "Mattsson et al., Sci Transl Med 2016, doi:10.1126/scitranslmed.aaf2362"
+    numerator_regions: [
+      "Precuneus", "PosteriorCingulate", "InferiorParietal", "LateralTemporal",
+      "MedialOrbitofrontal", "LateralOrbitofrontal", "AnteriorCingulate", "FrontalPole"
+    ] # *** ADAPT THESE CORTICAL REGIONS ***
+    denominator_regions: ["Cerebellum_GreyMatter"] # ADAPT
+    var_composition: 1
+
+
+  # --- Based on Llorente-Saguer et al. (Brain Comms) - CVR x8 ---
+  # This requires 8 distinct definitions. You need to specify numerator/denominator for each.
+  # Example for ONE of them. Repeat for others.
+  Llorente_CVR1:
+    name: "Llorente_CVR1_Example"
+    description: "Example CVR from Llorente-Saguer et al. (Brain Comms)"
+    source_citation: "Llorente-Saguer et al. (Provide specific paper)"
+    numerator_regions: ["Specific_Numerator_Region_For_CVR1"] # *** DEFINE ***
+    denominator_regions: ["Specific_Denominator_Region_For_CVR1"] # *** DEFINE ***
+    var_composition: 1
+  # Llorente_CVR2: ...
+  # ... up to Llorente_CVR8
+
+
+  # --- Braak Staging Biomarker (as per your previous code) ---
+  # This uses a custom calculation method, not just num/den ratio.
+  BraakStaging_InfCerebGM:
+    name: "BraakStaging_InfCerebGM"
+    description: "Biomarker based on GMM-thresholded Braak-like stages / Inferior Cerebellar GM"
+    source_citation: "Your internal method based on Braak staging principles"
+    calculation_method: "braak_staging" # Special flag for your custom function
+    reference_region: ["Inferior_Cerebellar_GrayMatter"] # ADAPT this single reference name
+    stage_definitions: # Regions for each stage
+      st1: ["amygdala", "entorhinal"] # ADAPT
+      st2: ["bankssts", "fusiform", "inferiortemporal", "middletemporal", "parahippocampal", "superiortemporal", "temporalpole"] # ADAPT
+      st3: ["caudalmiddlefrontal", "inferiorparietal", "isthmuscingulate", "lateraloccipital", "posteriorcingulate", "precuneus", "superiorparietal", "supramarginal"] # ADAPT
+      st4: ["caudalanteriorcingulate", "frontalpole", "insula", "lateralorbitofrontal", "medialorbitofrontal", "parsopercularis", "parsorbitalis", "parstriangularis", "rostralanteriorcingulate", "rostralmiddlefrontal", "superiorfrontal"] # ADAPT
+      st5: ["cuneus", "lingual", "paracentral", "pericalcarine", "postcentral", "transversetemporal"] # ADAPT
+    # var_composition for the tr2suvr calls within staging is handled by tr2suvr itself.
+    # The overall "biomarker" doesn't have a simple var_composition.

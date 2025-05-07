@@ -43,7 +43,7 @@
 #' @importFrom lme4 lmerControl
 #' @importFrom longpower lmmpower
 #' @importFrom methods is
-evaluate_literature_biomarkers <- function(literature_defs,
+evaluate_literature_biomarkers <- function(lit_biomarker_file_path = system.file("files", "literature_biomarkers.yaml", package = "biodiscvr"),
                                            prepared_data_list,
                                            config,
                                            datasets_to_evaluate = names(prepared_data_list),
@@ -72,6 +72,14 @@ evaluate_literature_biomarkers <- function(literature_defs,
   if (length(missing_dsets) > 0) stop("Datasets not found: ", paste(missing_dsets, collapse=", "))
   # Get ID col
   id_col <- id_col %||% config$preprocessing$id_column %||% "RID"
+  
+  # open literature biomarkers file
+  if (!file.exists(lit_biomarker_file_path)) {
+    stop("Literature biomarker definition file not found: ", lit_biomarker_file_path)
+  }
+  loaded_yaml <- yaml::read_yaml(lit_biomarker_file_path)
+  literature_defs <- loaded_yaml$biomarkers # Access the list under the 'biomarkers' key
+  
   # Validate structure of literature_defs
   for(bname in names(literature_defs)) {
     bdef <- literature_defs[[bname]]
