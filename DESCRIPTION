@@ -1,6 +1,6 @@
 Package: biodiscvr
 Title: Biomarker Discovery Using Composite Value Ratios
-Version: 0.0.0.9000
+Version: 1.0.0.9000
 Date: 2025
 Authors@R: 
     person("Isaac", "Llorente-Saguer", , "illorentes@gmail.com", role = c("aut", "cre"), comment = c(ORCID = "0000-0002-7612-5331"))
@@ -38,4 +38,7 @@ Imports:
     stringr
 Suggests:
     parallel,
-    doParallel
+    doParallel,
+    knitr,
+    rmarkdown
+VignetteBuilder: knitr
