@@ -6,7 +6,7 @@
 required_data_columns:
   - RID     # Unique individual ID, common to all their visits/scans
   - AGE     # Age at baseline
-  - time    # decimal years of the scan to the average visit date of the individual 
+  - ScanDate    # Date of the scan
   - DX      # 0 if cognitively unimpaired, 1 otherwise
   - AB      # amyloid positivity (1 if TRUE, 0 if FALSE)
 

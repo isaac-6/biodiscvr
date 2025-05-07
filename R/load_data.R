@@ -94,7 +94,7 @@ load_datasets <- function(root_path, verbose = TRUE) {
   }
   
   # --- Define Files to Load (could be an argument later) ---
-  files_to_load <- c("data.csv", "data_suv_bi.csv")
+  files_to_load <- c("data.csv", "data_suv_bi.csv", "data_vol_bi.csv", "data_uv_bi.csv")
   # Use file names without extension as keys in the inner list
   file_keys <- tools::file_path_sans_ext(files_to_load)
   

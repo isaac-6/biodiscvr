@@ -35,7 +35,8 @@ Imports:
     stats,
     dplyr,
     progress,
-    stringr
+    stringr,
+    mclust
 Suggests:
     parallel,
     doParallel,

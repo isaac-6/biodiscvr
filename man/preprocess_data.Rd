@@ -9,6 +9,7 @@ preprocess_data(
   files_path,
   config_filename = "config.yaml",
   log_directory = NULL,
+  scandate_column = "ScanDate",
   log_file_prefix = "preprocess_log_",
   dict_suv_target_col = NULL,
   dict_suv_potential_cols = NULL,
@@ -30,6 +31,8 @@ file expected within \code{files_path}. Defaults to "config.yaml".}
 \item{log_directory}{Character string or NULL. Path to the \strong{directory} where
 timestamped log files should be written. If NULL (default), logging to
 file is disabled. The directory will be created if it doesn't exist.}
+
+\item{scandate_column}{Name of the column in data.csv containing the scan date in Y\%m\%d format}
 
 \item{log_file_prefix}{Character string. Prefix for the generated log filename.
 Defaults to "preprocess_log_".}

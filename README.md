@@ -93,22 +93,8 @@ preclinical trials on Alzheimer’s disease*. Brain Communications, Volume
 ## Citation
 
 If you use `biodiscvr` in your research, please cite it. You can get the
-citation information by running:
-
-``` r
-# Need to ensure the package is loaded or installed for citation() to work
-# Suppress output if package not found during README build
-tryCatch({
-  # Construct the citation object manually if package might not be installed
-  # Or rely on it being installed for the README build
-  # For now, just show the command
-  # citation("biodiscvr")
-  print('Run citation("biodiscvr") in R after installation.')
-}, error = function(e) {
-  print("Package not installed. Run citation('biodiscvr') after installation.")
-})
-#> [1] "Run citation(\"biodiscvr\") in R after installation."
-```
+citation information by running: citation(“biodiscvr”) after
+installation.
 
 ## Contributing
 

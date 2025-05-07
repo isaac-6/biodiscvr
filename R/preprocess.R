@@ -16,6 +16,7 @@
 #' @param log_directory Character string or NULL. Path to the **directory** where
 #'   timestamped log files should be written. If NULL (default), logging to
 #'   file is disabled. The directory will be created if it doesn't exist.
+#' @param scandate_column Name of the column in data.csv containing the scan date in Y%m%d format
 #' @param log_file_prefix Character string. Prefix for the generated log filename.
 #'   Defaults to "preprocess_log_".
 #' @param dict_suv_target_col Character string or NULL. Target column name in
@@ -73,7 +74,7 @@
 #'
 #' @export
 #' @importFrom utils packageName packageVersion sessionInfo head str
-#' @importFrom stats setNames median quantile IQR sd na.omit aggregate
+#' @importFrom stats setNames median quantile IQR sd na.omit aggregate ave
 #' @importFrom methods is
 #' @importFrom yaml read_yaml
 #' @importFrom readr read_csv locale write_csv
@@ -83,6 +84,7 @@ preprocess_data <- function(loaded_data,
                             files_path,
                             config_filename = "config.yaml",
                             log_directory = NULL,
+                            scandate_column = "ScanDate",
                             log_file_prefix = "preprocess_log_",
                             dict_suv_target_col = NULL,
                             dict_suv_potential_cols = NULL,
@@ -280,6 +282,10 @@ preprocess_data <- function(loaded_data,
       
       # --- 1b. Check required 'data' columns ---
       if(can_do_checks) {
+        
+        date_col_name <- scandate_column %||% "ScanDate"
+        data_df_orig[[date_col_name]] <- "ScanDate"
+        
         actual_data_vars <- names(data_df_orig)
         missing_data_vars <- setdiff(expected_data_vars, actual_data_vars)
         if (length(missing_data_vars) > 0) {
@@ -288,7 +294,9 @@ preprocess_data <- function(loaded_data,
         } else { if (sink_active && verbose) message("  -> 'data': Required columns present.") }
       }
       
-      # --- 1c. Process 'data_suv_bi' (Best Match, Rename/Subset) ---
+
+      
+      # --- 1d. Process 'data_suv_bi' (Best Match, Rename/Subset) ---
       if (can_process_suv) {
         actual_suv_vars <- names(suv_df_orig)
         best_match_col_name <- NULL; best_match_score <- -1
@@ -467,6 +475,62 @@ preprocess_data <- function(loaded_data,
             } # else keep non-df elements
           } # End loop applying row filter
         } # End if n_ids_final > 0
+        
+        # --- Create "time" variable, as the time in years to the average visit.
+        # Get specific config for time calculation ---
+        time_col_name <- "time"
+        baseline_method <- preproc_params$baseline_method %||% "min_date" # Default to first visit
+        date_format_arg <- preproc_params$date_format # Will be NULL if not specified
+        
+        # --- Check and Calculate Time Variable ---
+        time_calc_success <- FALSE # Flag
+        if (!date_col_name %in% names(crit_df)) {
+          warning(sprintf("Dataset '%s': Specified date column '%s' not found in '%s'. Cannot calculate '%s' variable.",
+                          dset_name, date_col_name, crit_source_file, time_col_name), call. = FALSE)
+        } else {
+          if(verbose) message(sprintf("  - Calculating '%s' variable from '%s'...", time_col_name, date_col_name))
+          temp_dates <- crit_df[[date_col_name]]
+          
+          # Convert to Date objects
+          converted_dates <- tryCatch({
+            if (is.null(date_format_arg)) as.Date(temp_dates)
+            else as.Date(temp_dates, format = date_format_arg)
+          }, error = function(e) {
+            warning(sprintf("Dataset '%s': Failed to convert date column '%s' to Date objects. Check format or 'date_format' in config. Error: %s",
+                            dset_name, date_col_name, conditionMessage(e)), call.=FALSE)
+            return(NULL)
+          })
+          
+          if (!is.null(converted_dates) && !all(is.na(converted_dates))) {
+            # Calculate baseline date per ID using the MEAN date
+            # ave() applies the function (mean) to subsets defined by the second arg (ID column)
+            # and returns a vector aligned with the original data
+            # Use na.rm=TRUE to handle potential missing dates within an individual
+            mean_baseline_dates_per_row <- ave(converted_dates, crit_df[[id_col]], FUN = function(x) mean(x, na.rm = TRUE))
+            
+            # Calculate time difference in years relative to the individual's mean date
+            time_diff_days <- as.numeric(converted_dates - mean_baseline_dates_per_row)
+            # Gregorian year average days
+            days_in_year <- 365.2425
+            time_in_years <- time_diff_days / days_in_year
+            
+            # Add the new column *directly to the data frame within the list*
+            data_processed[[dset_name]][[crit_source_file]][[time_col_name]] <- time_in_years
+            time_calc_success <- TRUE
+            if(verbose) message(sprintf("    -> Successfully added '%s' column (time in years relative to mean scan date per %s).", time_col_name, id_col))
+            
+            # Update crit_df for subsequent steps in this iteration
+            crit_df <- data_processed[[dset_name]][[crit_source_file]]
+            
+          } else {
+            warning(sprintf("Dataset '%s': Date conversion resulted in NULL or all NAs. Cannot calculate '%s'.", dset_name, time_col_name), call.=FALSE)
+          }
+        } # End check for date column existence
+        
+        # Optional: Stop processing dataset if time calculation failed and time is essential?
+        if (!time_calc_success) { stop("time variable creation failed.") }
+        
+        
       } # End if can_do_filtering
       
       # --- Store validation report for this dataset ---
