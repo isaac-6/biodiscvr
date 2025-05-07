@@ -39,7 +39,7 @@
 #' @importFrom dplyr bind_rows select all_of left_join filter n_distinct between
 #' @importFrom rlang `%||%` .data sym is_scalar_character is_scalar_logical is_scalar_integerish
 #' @importFrom stats setNames median quantile IQR sd na.omit aggregate as.formula
-#' @importFrom readr write_csv locale read_csv # For saving and potentially loading defs
+#' @importFrom readr write_csv locale read_csv 
 #' @importFrom lme4 lmerControl
 #' @importFrom longpower lmmpower
 #' @importFrom methods is
@@ -297,5 +297,5 @@ evaluate_literature_biomarkers <- function(literature_defs,
     }, error = function(e) { warning(sprintf("Failed to write literature evaluation results to '%s': %s", output_evaluation_csv_path, e$message), call. = FALSE) })
   }
   
-  return(final_results_df)
+  invisible(final_results_df)
 }
