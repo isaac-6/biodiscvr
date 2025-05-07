@@ -8,3 +8,6 @@ output/
 *.Rproj
 data/
 files/dict_suv_old.csv
+inst/doc
+/doc/
+/Meta/

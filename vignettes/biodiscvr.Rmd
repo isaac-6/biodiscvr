@@ -1,0 +1,327 @@
+---
+title: "Biodiscvr Workflow with User Data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Biodiscvr Workflow with User Data}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE # <<< IMPORTANT: Default to NOT evaluating chunks
+)
+# Load necessary packages for code display and explanation
+library(biodiscvr)
+library(yaml) # Needed for reading config examples potentially
+```
+
+## Introduction
+
+This vignette demonstrates the typical end-to-end workflow for using the `biodiscvr` package to discover and evaluate biomarkers using **your own data**.
+
+We will cover the following steps:
+
+1.  Setting up necessary file paths.
+2.  Loading datasets using `load_datasets()`.
+3.  Checking data integrity and preparing SUV data using `check_and_prepare_data()`.
+4.  Preprocessing data based on criteria using `preprocess_datasets()`.
+5.  Generating demographic summaries using `create_demographics_table()`.
+6.  Running discovery experiments (single-cohort) using `run_experiments()`.
+7.  Evaluating predefined literature biomarkers using `evaluate_literature_biomarkers()`. (to be implemented)
+8.  Identifying key output files for reporting.
+
+**Note:** Because this vignette uses placeholders for user-specific file paths, the R code chunks are generally set to `eval=FALSE`. You will need to copy, paste, and adapt the code chunks into your own R script or console, replacing the placeholder paths with the actual locations of your files.
+
+## Setup: User Files and Paths
+
+Before running the workflow, ensure you have the following files prepared and know their locations:
+
+1.  **Root Data Directory:** The main folder containing subdirectories for each dataset (e.g., "ADNI", "AIBL"). Each subdirectory should contain at least `data.csv` and `data_suv_bi.csv`. All files should have matching rows.
+File content below.
+`data.csv` should contain:
+- DX: cognitively impaired binary diagnostic (DX = {0,1})
+- RID: unique individual ID, common to all their visits/scans
+- AB: binary amyloid positivity (1 if TRUE, 0 if FALSE)
+- time: decimal years of the scan to the average visit date of the individual 
+
+`data_suv_bi.csv` is the SUV or SUVR values of bilateral regions. The column names should match the ones from the first column of the `dict_suv.csv` file in "./inst/files/"; otherwise, a new column can be added in this file, with matching regional names.
+`data_vol_bi.csv` is the bilateral volumes. (will be needed to evaluate literature biomarkers).
+
+
+2.  **Your Output Directory:** A folder where results (CSV files, plots) will be saved. This directory will be created if it doesn't exist.
+
+**Package-Provided Files:**
+
+This workflow uses the following files included with the `biodiscvr` package (located in its `inst/files` directory):
+*   `config.yaml`: Default configuration (preprocessing, models, GA params, inclusion criteria).
+*   `dict_suv.csv`: Default SUV dictionary for region matching/renaming.
+*   `experiments.yaml`: Default set of discovery experiments.
+*   `literature_biomarkers.yaml`: (to be done) Default set of literature biomarkers.
+
+You can inspect these default files using `system.file("files", "<filename>", package = "biodiscvr")`. If you need to customize them, copy them from the package installation directory (`system.file("files", package = "biodiscvr")`) to your own project space and provide the path to your custom file instead of using the package default in the function calls below.
+
+**Define Your Paths (Replace Placeholders):**
+
+```{r define_paths, eval=TRUE}
+# --- USER: Define paths to YOUR data and desired output ---
+
+# 1. Path to the main folder containing your dataset subfolders (ADNI/, MAYO/, etc.)
+user_data_root_dir <- "path/to/your/data_root_folder" # <<< REPLACE
+
+# 2. Path to the desired main output directory (will be created if needed)
+user_output_dir <- file.path(tempdir(), "biodiscvr_output") # <<< REPLACE (using tempdir for vignette example)
+if (!dir.exists(user_output_dir)) dir.create(user_output_dir, recursive = TRUE)
+
+# 3. Path to the desired directory for detailed logs (optional, set to NULL to disable)
+user_log_dir <- file.path(user_output_dir, "logs") # Example: subfolder in output
+
+# 4. Define desired output CSV filenames within user_output_dir
+main_results_csv <- file.path(user_output_dir, "discovery_evaluation_results.csv")
+literature_results_csv <- file.path(user_output_dir, "literature_evaluation_results.csv")
+demographics_dir <- file.path(user_output_dir, "demographics") # Dir for demo tables
+
+# 5. Define datasets to process (must match folder names in user_data_root_dir)
+#    For this example, we assume the user has 'Dataset1' and 'Dataset2' folders
+#    in their user_data_root_dir. Adjust as needed.
+datasets_to_process <- c("Dataset1", "Dataset2") # <<< REPLACE with your actual dataset folder names
+
+# 6. Define an overall tag for this experimental run
+run_tag <- format(Sys.time(), "%Y%m%d_%H%M") # Example tag
+
+# --- Get Paths to Package-Internal Files ---
+# These paths point to files INSIDE the installed biodiscvr package
+pkg_config_file <- system.file("files", "config.yaml", package = "biodiscvr", mustWork = TRUE)
+# Note: check_and_prepare_data now finds dict_suv.csv internally using system.file based on config_filename path
+pkg_experiments_file <- system.file("files", "experiments.yaml", package = "biodiscvr", mustWork = TRUE)
+# pkg_literature_defs_file <- system.file("files", "literature_biomarkers.yaml", package = "biodiscvr", mustWork = TRUE)
+
+# --- Load Config Once (needed by multiple steps) ---
+# Check if config file exists before attempting to read
+if (!file.exists(pkg_config_file)) {
+  stop("Package configuration file not found at expected location: ", pkg_config_file)
+}
+config <- yaml::read_yaml(pkg_config_file)
+
+```
+
+<!-- *Self-contained Example Setup (Optional - Requires example data in package)* -->
+<!-- *If you add example data/files to `inst/extdata` or `inst/files`, you can uncomment* -->
+<!-- *and adapt this section to make the vignette fully runnable without user data.* -->
+<!-- ```{r example_setup, eval=FALSE, include=FALSE} -->
+<!-- # # Create dummy data for vignette example if needed -->
+<!-- # dummy_data_dir <- file.path(tempdir(), "biodiscvr_dummy_data") -->
+<!-- # if(dir.exists(dummy_data_dir)) unlink(dummy_data_dir, recursive=TRUE) -->
+<!-- # dir.create(dummy_data_dir) -->
+<!-- # # Create Dataset1 folder and files... -->
+<!-- # # Create Dataset2 folder and files... -->
+<!-- # user_data_root_dir <- dummy_data_dir # Override user path for vignette run -->
+<!-- # datasets_to_process <- c("Dataset1", "Dataset2") # Use dummy names -->
+<!-- ``` -->
+
+
+## Step 1: Loading Datasets
+
+Scans your `user_data_root_dir` for the specified `datasets_to_process`.
+
+```{r load_data, eval=TRUE}
+# --- Ensure user_data_root_dir is set correctly above ---
+if (user_data_root_dir == "path/to/your/data_root_folder") {
+  warning("Placeholder 'user_data_root_dir' not replaced. Skipping data loading.", immediate. = TRUE)
+  loaded_data_raw <- NULL
+} else if (!dir.exists(user_data_root_dir)) {
+  warning("Specified 'user_data_root_dir' does not exist: ", user_data_root_dir, immediate. = TRUE)
+  loaded_data_raw <- NULL
+} else {
+  loaded_data_raw <- load_datasets(root_path = user_data_root_dir)
+  print(paste("Loaded data for:", paste(names(loaded_data_raw), collapse=", ")))
+}
+```
+
+*Expected Output:* A list `loaded_data_raw` containing data frames loaded from your specified directory.
+
+## Step 2: Checking and Preparing Data
+
+Uses the package-internal `config.yaml` and `dict_suv.csv` (found relative to the config file path) to validate and prepare your loaded data.
+
+```{r check_data, eval=TRUE}
+checked_output <- NULL
+if (!is.null(loaded_data_raw)) {
+  # Note: files_path is now used to find the config, and the function
+  # internally finds dict_suv.csv relative to that or via system.file.
+  checked_output <- check_and_prepare_data(
+    loaded_data = loaded_data_raw,
+    files_path = dirname(pkg_config_file), # Pass directory of package config
+    config_filename = basename(pkg_config_file), # Pass name of package config
+    log_directory = user_log_dir,
+    log_file_prefix = paste0(run_tag, "_check_prep_log_"),
+    verbose = FALSE # Keep vignette output cleaner
+  )
+  # print(checked_output$validation_report) # Optionally show report
+} else {
+  message("Skipping check/prepare step as data loading failed or was skipped.")
+}
+```
+
+*Expected Output:* A list `checked_output`. Check console/log file for warnings/messages. Data is in `checked_output$data`.
+
+## Step 3: Preprocessing Data
+
+Applies filters based on the package-internal `config.yaml`.
+
+```{r preprocess_data, eval=TRUE}
+preprocessed_data_list <- NULL
+if (!is.null(checked_output)) {
+  preprocessed_data_list <- preprocess_datasets(
+    checked_data = checked_output,
+    verbose = FALSE
+  )
+  print("Preprocessing complete. Datasets available:")
+  print(names(preprocessed_data_list))
+} else {
+  message("Skipping preprocessing step.")
+}
+```
+
+*Expected Output:* A list `preprocessed_data_list` containing the filtered data frames.
+
+## Step 4: Creating Demographics Tables
+
+Generates summary tables for the datasets that survived preprocessing.
+
+```{r demographics, eval=TRUE}
+demographics_tables <- list()
+if (!is.null(preprocessed_data_list)) {
+  if (!dir.exists(demographics_dir)) dir.create(demographics_dir, recursive = TRUE)
+  
+  for (dset_name in names(preprocessed_data_list)) {
+    message("Generating demographics for: ", dset_name)
+    demographics_csv_path <- file.path(demographics_dir, paste0("demographics_", dset_name, ".csv"))
+
+    demographics_tables[[dset_name]] <- create_demographics_table(
+      processed_dataset_list = preprocessed_data_list[[dset_name]],
+      dataset_name = dset_name,
+      output_csv_path = demographics_csv_path, # Save the table
+      id_col = config$preprocessing$id_column %||% "RID" # Use loaded config
+    )
+    # Optionally print the first few rows
+    # print(head(demographics_tables[[dset_name]]))
+  }
+} else {
+   message("Skipping demographics generation.")
+}
+```
+
+*Expected Output:* CSV files saved in the `demographics_dir` and tables stored in the `demographics_tables` list.
+
+## Step 5: Running Discovery Experiments
+
+Runs the experiments defined in the package-internal `experiments.yaml`. **This step can take about 1h (depending on the CPU, parallelisation, and experimental design).** For this vignette, the chunk is set to `eval=FALSE`. Copy the code and run it in your own script for actual analysis.
+
+```{r run_experiments, eval=FALSE}
+# Ensure the experiments config file exists
+if (!file.exists(pkg_experiments_file)) stop("Package experiments file not found!")
+if (is.null(preprocessed_data_list)) stop("Cannot run experiments without preprocessed data.")
+
+# get search space (features)
+target_col_name <- "target" # target column for features
+features_df <- readr::read_csv(dict_path, show_col_types = FALSE, progress = FALSE)
+features <- features_df[[target_col_name]]
+
+# 2. Construct the full path using system.file()
+dict_path <- system.file("files", "dict_suv.csv", package = "biodiscvr", mustWork = FALSE)
+
+# Run the sequence of experiments
+# Results are appended to output_csv_path
+experiment_results_info <- run_experiments(
+  prepared_data_list = preprocessed_data_list,
+  config = checked_output$config, # Use the config loaded earlier
+  experiments_config_path = pkg_experiments_file, # Use package experiments file
+  features = features # search space for CVR
+  output_csv_path = main_results_csv,
+  output_plot_dir = file.path(user_output_dir, "plots"),
+  save_plots = TRUE, # Set to FALSE to disable plot saving if needed
+  datasets_to_run = names(preprocessed_data_list), # Use available datasets
+  experiment_master_tag = run_tag,
+  base_ga_seed = 42 # Optional
+)
+
+message("Experiment runs execution command shown. Run manually for actual results.")
+message("Main results will be appended to: ", main_results_csv)
+
+# To view results after running manually:
+# results_df <- readr::read_csv(main_results_csv)
+# print(head(results_df))
+```
+
+*Expected Output (when run manually):* Progress messages printed. The `main_results_csv` file is populated. Plots may be saved.
+
+<!-- ## Step 6: Evaluating Literature Biomarkers -->
+
+<!-- Evaluates standard biomarkers defined in the package-internal `literature_biomarkers.yaml`. -->
+
+<!-- ```{r eval_literature, eval=FALSE} -->
+<!-- literature_evaluation_df <- NULL -->
+<!-- # Ensure the literature definitions file exists -->
+<!-- if (!file.exists(pkg_literature_defs_file)) { -->
+<!--   warning("Package literature biomarker file not found. Skipping evaluation.", immediate.=TRUE) -->
+<!-- } else if (is.null(preprocessed_data_list)) { -->
+<!--   message("Skipping literature evaluation as preprocessed data is not available.") -->
+<!-- } else { -->
+<!--   # Load the definitions -->
+<!--   literature_defs_yaml <- yaml::read_yaml(pkg_literature_defs_file) -->
+<!--   literature_defs_list <- literature_defs_yaml$biomarkers -->
+
+<!--   # Run the evaluation -->
+<!--   literature_evaluation_df <- evaluate_literature_biomarkers( -->
+<!--     literature_defs = literature_defs_list, -->
+<!--     prepared_data_list = preprocessed_data_list, -->
+<!--     config = checked_output$config, -->
+<!--     datasets_to_evaluate = names(preprocessed_data_list), -->
+<!--     groups_to_evaluate = c("CU", "CI"), -->
+<!--     calculate_ci = FALSE, # Keep this FALSE for vignette speed -->
+<!--     output_evaluation_csv_path = literature_results_csv, # Save to separate CSV -->
+<!--     verbose = FALSE # Keep vignette output cleaner -->
+<!--   ) -->
+
+<!--   # Display head of results table -->
+<!--   if(!is.null(literature_evaluation_df)) { -->
+<!--       message("Literature evaluation complete. Results saved to: ", literature_results_csv) -->
+<!--       # print(head(literature_evaluation_df)) # Optionally show results -->
+<!--   } else { -->
+<!--       message("Literature evaluation did not produce results.") -->
+<!--   } -->
+<!-- } -->
+
+<!-- ``` -->
+
+<!-- *Expected Output:* A data frame `literature_evaluation_df` (if successful) and results saved to `literature_results_csv`. -->
+
+## Reporting Output Files
+
+After running the workflow by adapting the code chunks above in your own script, the key output files generated in your specified `user_output_dir` will be:
+
+1.  **Main Discovery & Evaluation Results:**
+    *   Path: `main_results_csv` (e.g., `your/output/folder/discovery_evaluation_results.csv`)
+    *   Content: Results from `run_experiments`, including single- and multi-cohort runs defined in the package's `experiments.yaml`.
+
+2.  **(to be done) Literature Biomarker Evaluation Results:**
+    *   Path: `literature_results_csv` (e.g., `your/output/folder/literature_evaluation_results.csv`)
+    *   Content: Performance metrics for standard biomarkers defined in the package's `literature_biomarkers.yaml`, evaluated on your data.
+
+3.  **Demographics Tables:**
+    *   Path: Inside the `demographics_dir` (e.g., `your/output/folder/demographics/`)
+    *   Files: One CSV per dataset (e.g., `demographics_ADNI.csv`).
+    *   Content: Summary statistics for your preprocessed cohorts.
+
+4.  **Detailed Check/Prepare Log File (Optional):**
+    *   Path: Inside `user_log_dir` (e.g., `your/output/folder/logs/`)
+    *   Content: Verbose logs from `check_and_prepare_data`.
+
+5.  **GA Convergence Plots (Optional):**
+    *   Path: Inside the plot directory (e.g., `your/output/folder/plots/`)
+    *   Content: TIFF images visualizing GA progress for single-cohort runs.
+
+These files provide a comprehensive record of the analysis performed on your data using the package's default configurations and methods. Remember to consult individual function help (`?function_name`) for more details on specific arguments and customization options.
