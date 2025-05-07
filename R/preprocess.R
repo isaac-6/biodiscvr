@@ -476,6 +476,60 @@ preprocess_data <- function(loaded_data,
           } # End loop applying row filter
         } # End if n_ids_final > 0
         
+        
+        # --- Step 4: Calculate and Add UV data (if possible) ---
+        # Check if both SUV and VOL data exist and are valid after filtering
+        if ("data_suv_bi" %in% names(data_processed[[dset_name]]) &&
+            "data_vol" %in% names(data_processed[[dset_name]]) && # Check if data_vol exists
+            is.data.frame(data_processed[[dset_name]]$data_suv_bi) &&
+            is.data.frame(data_processed[[dset_name]]$data_vol) &&
+            nrow(data_processed[[dset_name]]$data_suv_bi) == nrow(data_processed[[dset_name]]$data_vol) && # Ensure same rows after filtering
+            nrow(data_processed[[dset_name]]$data_suv_bi) > 0) { # Ensure not empty
+          
+          if(verbose) message(sprintf("  - Calculating UV data (SUV * Volume)..."))
+          data_suv_filt <- data_processed[[dset_name]]$data_suv_bi
+          data_vol_filt <- data_processed[[dset_name]]$data_vol
+          id_col_present_suv <- id_col %in% names(data_suv_filt)
+          id_col_present_vol <- id_col %in% names(data_vol_filt)
+          
+          # Identify numeric columns (excluding ID) in both dataframes
+          numeric_suv_cols <- names(data_suv_filt)[sapply(data_suv_filt, is.numeric)]
+          numeric_vol_cols <- names(data_vol_filt)[sapply(data_vol_filt, is.numeric)]
+          if(id_col_present_suv) numeric_suv_cols <- setdiff(numeric_suv_cols, id_col)
+          if(id_col_present_vol) numeric_vol_cols <- setdiff(numeric_vol_cols, id_col)
+          
+          # Find common numeric columns to multiply
+          common_numeric_cols <- intersect(numeric_suv_cols, numeric_vol_cols)
+          
+          if (length(common_numeric_cols) > 0) {
+            # Perform element-wise multiplication only on common numeric columns
+            # Initialize data_uv with non-numeric columns if needed (like ID)
+            if(id_col_present_suv && id_col_present_vol) {
+              data_uv <- data.frame(placeholder_id = data_suv_filt[[id_col]])
+              names(data_uv)[1] <- id_col
+            } else {
+              data_uv <- data.frame(matrix(ncol = 0, nrow = nrow(data_suv_filt))) # Empty df with correct rows
+            }
+            
+            # Multiply common columns
+            data_uv[common_numeric_cols] <- data_suv_filt[, common_numeric_cols, drop=FALSE] * data_vol_filt[, common_numeric_cols, drop=FALSE]
+            
+            # Add the calculated data_uv to the list for this dataset
+            data_processed[[dset_name]]$data_uv_bi <- data_uv
+            if(verbose) message(sprintf("    -> Added 'data_uv_bi' data frame with %d columns.", ncol(data_uv)))
+            
+          } else {
+            warning(sprintf("Dataset '%s': No common numeric columns found between 'data_suv_bi' and 'data_vol' after filtering. Cannot calculate 'data_uv'.", dset_name), call. = FALSE)
+            # Optionally add an empty data_uv frame? Or leave it NULL? Let's leave it NULL.
+            data_processed[[dset_name]]$data_uv <- NULL
+          }
+        } else {
+          if(verbose) message(sprintf("  - Skipping UV data calculation: 'data_suv_bi' or 'data_vol' missing, empty, non-dataframe, or have mismatched rows after filtering."))
+          # Ensure data_uv element doesn't exist if calculation skipped
+          data_processed[[dset_name]]$data_uv <- NULL
+        }
+        
+        
         # --- Create "time" variable, as the time in years to the average visit.
         # Get specific config for time calculation ---
         time_col_name <- "time"
