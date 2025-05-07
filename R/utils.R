@@ -257,6 +257,7 @@
   valid_stage_names <- names(valid_thresholds)
   if(length(valid_stage_names) == 0) { warning("No valid thresholds available for positivity matrix.", call.=FALSE); return(NULL)}
   
+  n_rows <- nrow(df_stage_suvr)
   positivity_matrix <- matrix(FALSE, nrow = n_rows, ncol = length(valid_stage_names),
                               dimnames = list(NULL, valid_stage_names))
   for(stage_name in valid_stage_names) {

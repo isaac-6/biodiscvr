@@ -5,25 +5,20 @@
 \title{Evaluate Predefined Literature Biomarkers}
 \usage{
 evaluate_literature_biomarkers(
-  literature_defs,
+  lit_biomarker_file_path = system.file("files", "literature_biomarkers.yaml", package =
+    "biodiscvr"),
   prepared_data_list,
   config,
   datasets_to_evaluate = names(prepared_data_list),
   groups_to_evaluate = c("CU", "CI"),
   calculate_ci = FALSE,
   nsim = 1000,
-  output_evaluation_csv_path = NULL,
+  output_csv_path = NULL,
   id_col = NULL,
   verbose = TRUE
 )
 }
 \arguments{
-\item{literature_defs}{List. A named list where each element defines a
-literature biomarker. Each element must be a list containing at least:
-\verb{$name} (character), \verb{$numerator_regions} (character vector),
-\verb{$denominator_regions} (character vector), and \verb{$var_composition} (numeric, 0-3).
-Optionally include \verb{$description} and \verb{$source_citation}.}
-
 \item{prepared_data_list}{List. The output from \code{preprocess_datasets()},
 containing filtered data for multiple datasets.}
 
@@ -40,12 +35,18 @@ Defaults to \code{c("CU", "CI")}.}
 \item{nsim}{Integer. Number of bootstrap simulations if \code{calculate_ci} is \code{TRUE}.
 Defaults to 100.}
 
+\item{output_csv_path}{Character string or NULL. Path to save the evaluation
+results as a \emph{new} CSV file (overwrites if exists).}
+
 \item{id_col}{Character string. Name of the unique ID column. Defaults to "RID".}
 
 \item{verbose}{Logical. Print progress messages? Defaults to TRUE.}
 
-\item{output_csv_path}{Character string or NULL. Path to save the evaluation
-results as a \emph{new} CSV file (overwrites if exists).}
+\item{literature_defs}{List. A named list where each element defines a
+literature biomarker. Each element must be a list containing at least:
+\verb{$name} (character), \verb{$numerator_regions} (character vector),
+\verb{$denominator_regions} (character vector), and \verb{$var_composition} (numeric, 0-3).
+Optionally include \verb{$description} and \verb{$source_citation}.}
 }
 \value{
 A data frame containing the evaluation results. Each row corresponds to

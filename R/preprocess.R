@@ -16,6 +16,7 @@
 #' @param log_directory Character string or NULL. Path to the **directory** where
 #'   timestamped log files should be written. If NULL (default), logging to
 #'   file is disabled. The directory will be created if it doesn't exist.
+#' @param scandate_column Name of the column in data.csv containing the scan date in Y%m%d format
 #' @param log_file_prefix Character string. Prefix for the generated log filename.
 #'   Defaults to "preprocess_log_".
 #' @param dict_suv_target_col Character string or NULL. Target column name in
@@ -73,7 +74,7 @@
 #'
 #' @export
 #' @importFrom utils packageName packageVersion sessionInfo head str
-#' @importFrom stats setNames median quantile IQR sd na.omit aggregate
+#' @importFrom stats setNames median quantile IQR sd na.omit aggregate ave
 #' @importFrom methods is
 #' @importFrom yaml read_yaml
 #' @importFrom readr read_csv locale write_csv

@@ -50,7 +50,7 @@ evaluate_literature_biomarkers <- function(lit_biomarker_file_path = system.file
                                            groups_to_evaluate = c("CU", "CI"),
                                            calculate_ci = FALSE,
                                            nsim = 1000,
-                                           output_evaluation_csv_path = NULL,
+                                           output_csv_path = NULL,
                                            id_col = NULL,
                                            verbose = TRUE) {
   
@@ -189,13 +189,14 @@ evaluate_literature_biomarkers <- function(lit_biomarker_file_path = system.file
             warning(sprintf("Biomarker '%s' on %s: Missing regions. Num:[%s], Den:[%s]", biomarker_name, eval_dset_name, paste(missing_num, collapse=","), paste(missing_den, collapse=",")), call.=FALSE)
           } else {
             calculated_value <- tryCatch({
-              .calculate_value_from_regions( # Use the helper for this
-                data_suv = data_suv,
-                numerator_regions = num_regions,
-                denominator_regions = den_regions,
-                var_composition = var_comp
-                # Pass UV/Vol if needed
-              )
+              NA
+              # .tr2cvr( # Use the helper for this
+              #   data_suv = data_suv,
+              #   numerator_regions = num_regions,
+              #   denominator_regions = den_regions,
+              #   var_composition = var_comp
+              #   # Pass UV/Vol if needed
+              # )
             }, error = function(e) { NULL })
             if(is.null(calculated_value)) eval_status <- "Value Calculation Error"
           }
@@ -293,16 +294,16 @@ evaluate_literature_biomarkers <- function(lit_biomarker_file_path = system.file
   }
   
   # --- Save Final Table (Optional) ---
-  if (!is.null(output_evaluation_csv_path)) {
+  if (!is.null(output_csv_path)) {
     # ... (logic to create dir and write CSV using readr::write_csv) ...
     tryCatch({
-      output_dir <- dirname(output_evaluation_csv_path)
+      output_dir <- dirname(output_csv_path)
       if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
       if(dir.exists(output_dir)){
-        readr::write_csv(final_results_df, output_evaluation_csv_path, na = "NA")
-        message("Literature evaluation results saved to: ", output_evaluation_csv_path)
+        readr::write_csv(final_results_df, output_csv_path, na = "NA")
+        message("Literature evaluation results saved to: ", output_csv_path)
       } else { warning("Failed to create output directory '", output_dir, "'. Cannot write CSV.", call.=FALSE) }
-    }, error = function(e) { warning(sprintf("Failed to write literature evaluation results to '%s': %s", output_evaluation_csv_path, e$message), call. = FALSE) })
+    }, error = function(e) { warning(sprintf("Failed to write literature evaluation results to '%s': %s", output_csv_path, e$message), call. = FALSE) })
   }
   
   invisible(final_results_df)
