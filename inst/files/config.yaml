@@ -68,7 +68,7 @@ power_params:
 # These are examples; adjust based on your specific GA implementation and needs.
 genetic_algorithm:
   popSize: 32           # Population size per generation. Time scales linearly.
-  maxiter: 600          # Maximum number of generations (iterations) default 600. Time scales linearly.
+  maxiter: 30          # Maximum number of generations (iterations) default 600. Time scales linearly.
   run: 100              # Early stopping if no fitness improvement in X generations default 100
   pmutation: 0.5        # Probability of mutation
   crossover: "gareal_blxCrossover"
