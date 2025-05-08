@@ -247,6 +247,7 @@ preprocess_data <- function(loaded_data,
   
   withCallingHandlers({
     for (dset_name in names(data_processed)) {
+      
       if (sink_active && verbose) message("\nProcessing dataset: ", dset_name)
       else if(verbose) cat("\nProcessing dataset: ", dset_name, "\n")
       
@@ -280,19 +281,19 @@ preprocess_data <- function(loaded_data,
         dataset_report$empty_suv_df <- TRUE; can_process_suv <- FALSE
       }
       
-      # --- 1b. Check required 'data' columns ---
-      if(can_do_checks) {
-        
-        date_col_name <- scandate_column %||% "ScanDate"
-        data_df_orig[[date_col_name]] <- "ScanDate"
-        
-        actual_data_vars <- names(data_df_orig)
-        missing_data_vars <- setdiff(expected_data_vars, actual_data_vars)
-        if (length(missing_data_vars) > 0) {
-          msg <- sprintf("Dataset '%s' (data): Missing required columns (from config): %s", dset_name, paste(missing_data_vars, collapse = ", "))
-          warning(msg, call. = FALSE); dataset_report$missing_data_columns <- missing_data_vars
-        } else { if (sink_active && verbose) message("  -> 'data': Required columns present.") }
-      }
+      # # --- 1b. Check required 'data' columns ---
+      # if(can_do_checks) {
+      #   
+      #   date_col_name <- scandate_column %||% "ScanDate"
+      #   data_df_orig[[date_col_name]] <- "ScanDate"
+      #   
+      #   actual_data_vars <- names(data_df_orig)
+      #   missing_data_vars <- setdiff(expected_data_vars, actual_data_vars)
+      #   if (length(missing_data_vars) > 0) {
+      #     msg <- sprintf("Dataset '%s' (data): Missing required columns (from config): %s", dset_name, paste(missing_data_vars, collapse = ", "))
+      #     warning(msg, call. = FALSE); dataset_report$missing_data_columns <- missing_data_vars
+      #   } else { if (sink_active && verbose) message("  -> 'data': Required columns present.") }
+      # }
       
 
       
@@ -529,57 +530,98 @@ preprocess_data <- function(loaded_data,
           data_processed[[dset_name]]$data_uv <- NULL
         }
         
+        # --- Step 5: Ensure Time Variable Exists ---
+        if(verbose) message(sprintf("  - Processing time variable..."))
+        time_calc_success <- FALSE
         
-        # --- Create "time" variable, as the time in years to the average visit.
-        # Get specific config for time calculation ---
-        time_col_name <- "time"
-        baseline_method <- preproc_params$baseline_method %||% "min_date" # Default to first visit
-        date_format_arg <- preproc_params$date_format # Will be NULL if not specified
+        # Get config params for time
+        date_col_name <- preproc_params$date_column %||% "ScanDate"
+        rel_time_col_name <- preproc_params$relative_time_column %||% "years.from.baseline"
+        time_col_name <- preproc_params$time_output_column %||% "time" # Final desired name
+        center_time <- isTRUE(preproc_params$center_time_variable %||% TRUE) # Default to TRUE
+        date_format_arg <- preproc_params$date_format # NULL if not specified
         
-        # --- Check and Calculate Time Variable ---
-        time_calc_success <- FALSE # Flag
-        if (!date_col_name %in% names(crit_df)) {
-          warning(sprintf("Dataset '%s': Specified date column '%s' not found in '%s'. Cannot calculate '%s' variable.",
-                          dset_name, date_col_name, crit_source_file, time_col_name), call. = FALSE)
-        } else {
-          if(verbose) message(sprintf("  - Calculating '%s' variable from '%s'...", time_col_name, date_col_name))
-          temp_dates <- crit_df[[date_col_name]]
-          
-          # Convert to Date objects
+        crit_df_ref <- data_processed[[dset_name]][[crit_source_file]] # Reference the df in the list
+        time_added_or_found <- FALSE
+        calculated_time_vector <- NULL
+        
+        # --- Attempt 1: Calculate from Date Column ---
+        if (date_col_name %in% names(crit_df_ref)) {
+          if(verbose) message(sprintf("    - Found date column '%s'. Attempting calculation.", date_col_name))
+          temp_dates <- crit_df_ref[[date_col_name]]
           converted_dates <- tryCatch({
             if (is.null(date_format_arg)) as.Date(temp_dates)
             else as.Date(temp_dates, format = date_format_arg)
-          }, error = function(e) {
-            warning(sprintf("Dataset '%s': Failed to convert date column '%s' to Date objects. Check format or 'date_format' in config. Error: %s",
-                            dset_name, date_col_name, conditionMessage(e)), call.=FALSE)
-            return(NULL)
-          })
+          }, error = function(e) { NULL }) # Return NULL on error
           
           if (!is.null(converted_dates) && !all(is.na(converted_dates))) {
-            # Calculate baseline date per ID using the MEAN date
-            # ave() applies the function (mean) to subsets defined by the second arg (ID column)
-            # and returns a vector aligned with the original data
-            # Use na.rm=TRUE to handle potential missing dates within an individual
-            mean_baseline_dates_per_row <- ave(converted_dates, crit_df[[id_col]], FUN = function(x) mean(x, na.rm = TRUE))
-            
-            # Calculate time difference in years relative to the individual's mean date
-            time_diff_days <- as.numeric(converted_dates - mean_baseline_dates_per_row)
-            # Gregorian year average days
+            # Use mean date per ID for baseline/centering
+            mean_baseline_dates <- ave(converted_dates, crit_df_ref[[id_col]], FUN = function(x) mean(x, na.rm = TRUE))
+            time_diff_days <- as.numeric(converted_dates - mean_baseline_dates)
             days_in_year <- 365.2425
-            time_in_years <- time_diff_days / days_in_year
-            
-            # Add the new column *directly to the data frame within the list*
-            data_processed[[dset_name]][[crit_source_file]][[time_col_name]] <- time_in_years
-            time_calc_success <- TRUE
-            if(verbose) message(sprintf("    -> Successfully added '%s' column (time in years relative to mean scan date per %s).", time_col_name, id_col))
-            
-            # Update crit_df for subsequent steps in this iteration
-            crit_df <- data_processed[[dset_name]][[crit_source_file]]
-            
+            calculated_time_vector <- time_diff_days / days_in_year
+            time_added_or_found <- TRUE
+            if(verbose) message(sprintf("      -> Calculated time from '%s'.", date_col_name))
           } else {
-            warning(sprintf("Dataset '%s': Date conversion resulted in NULL or all NAs. Cannot calculate '%s'.", dset_name, time_col_name), call.=FALSE)
+            warning(sprintf("Dataset '%s': Found date column '%s' but failed to convert to Date objects. Will check for '%s'.",
+                            dset_name, date_col_name, rel_time_col_name), call.=FALSE)
           }
-        } # End check for date column existence
+        } else {
+          if(verbose) message(sprintf("    - Date column '%s' not found. Checking for '%s'.", date_col_name, rel_time_col_name))
+        }
+        
+        # --- Attempt 2: Use Relative Time Column (if date method failed/skipped) ---
+        if (!time_added_or_found) {
+          if (rel_time_col_name %in% names(crit_df_ref)) {
+            if(verbose) message(sprintf("    - Found relative time column '%s'. Using it.", rel_time_col_name))
+            temp_rel_time <- crit_df_ref[[rel_time_col_name]]
+            if (!is.numeric(temp_rel_time)) {
+              warning(sprintf("Dataset '%s': Relative time column '%s' found but is not numeric. Cannot use it.", dset_name, rel_time_col_name), call.=FALSE)
+            } else if (all(is.na(temp_rel_time))) {
+              warning(sprintf("Dataset '%s': Relative time column '%s' contains only NAs. Cannot use it.", dset_name, rel_time_col_name), call.=FALSE)
+            } else {
+              calculated_time_vector <- temp_rel_time # Use the column directly first
+              time_added_or_found <- TRUE
+              if(verbose) message(sprintf("      -> Using values from '%s'.", rel_time_col_name))
+            }
+          } else {
+            if(verbose) message(sprintf("    - Relative time column '%s' not found.", rel_time_col_name))
+          }
+        }
+        
+        # --- Final Check and Processing ---
+        if (!time_added_or_found || is.null(calculated_time_vector)) {
+          # Stop if neither source column was found or usable
+          stop(sprintf("Dataset '%s': Required time information could not be found or calculated using specified columns ('%s' or '%s'). Please check data and configuration.",
+                       dset_name, date_col_name, rel_time_col_name))
+        } else {
+          # --- Optional Centering (Recommended) ---
+          if(center_time) {
+            # Center around the mean *per subject* even if input was relative time
+            if(!id_col %in% names(crit_df_ref)){
+              warning(sprintf("Dataset '%s': Cannot center time variable because ID column '%s' is missing from '%s'. Using uncentered time.", dset_name, id_col, crit_source_file), call.=FALSE)
+            } else {
+              mean_time_per_id <- ave(calculated_time_vector, crit_df_ref[[id_col]], FUN = function(x) mean(x, na.rm=TRUE))
+              # Replace NA means (e.g., for single-visit subjects after filtering) with 0? Or keep NA? Let's keep NA for time if mean is NA.
+              # mean_time_per_id[is.na(mean_time_per_id)] <- 0 # Optional: center single visits at 0
+              calculated_time_vector <- calculated_time_vector - mean_time_per_id
+              if(verbose) message("      -> Centered time variable around mean per subject.")
+              time_calc_success <- TRUE
+            }
+          } else {
+            if(verbose) message("      -> Using time variable without centering per subject.")
+          }
+          
+          # --- Assign final time column ---
+          # Add/overwrite the column directly in the data_processed list
+          data_processed[[dset_name]][[crit_source_file]][[time_col_name]] <- calculated_time_vector
+          if(verbose) message(sprintf("    -> Final time variable stored in column '%s'.", time_col_name))
+          
+          # Update crit_df reference if needed for subsequent steps within this loop iteration
+          # (Though filtering is done, this ensures consistency if crit_df is used later)
+          crit_df <- data_processed[[dset_name]][[crit_source_file]]
+        }
+        # --- End Time Variable Processing ---
         
         # Optional: Stop processing dataset if time calculation failed and time is essential?
         if (!time_calc_success) { stop("time variable creation failed.") }

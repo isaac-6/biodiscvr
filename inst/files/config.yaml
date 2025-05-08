@@ -13,9 +13,18 @@ required_data_columns:
 preprocessing:
   min_entries_per_id: 2
   id_column: "RID" # Column defining unique individuals
-  # File within each dataset used for min_entries and value-based criteria checks
   criteria_source_file: "data"
   ignore_columns: ["idx"]
+  # --- Time Calculation Configuration ---
+  # Option 1: Calculate from a date column
+  date_column: "ScanDate"      # Primary column to look for (date format)
+  date_format: "%m/%d/%Y"      # Optional: Specify format if not standard (e.g., "%Y%m%d")
+  # Option 2: Use an existing relative time column
+  relative_time_column: "years.from.baseline" # Secondary column (numeric years)
+  # Final output column name
+  time_output_column: "time"
+  # Center the final 'time' variable around the mean per subject? (Recommended)
+  center_time_variable: true
 
 # --- Model Equations ---
 # Formulas used in fevalMethod for model fitting. Stored as strings.
