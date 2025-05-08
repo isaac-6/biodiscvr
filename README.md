@@ -50,7 +50,7 @@ After installing the package, you can access the vignette with:
 # library(biodiscvr)
 
 # View the main workflow vignette
-vignette("biodiscvr", package = "biodiscvr") # Use the base name of your .Rmd file
+vignette("biodiscvr", package = "biodiscvr")
 ```
 
 The vignette covers: \* Setting up your data directories and output
@@ -93,7 +93,7 @@ preclinical trials on Alzheimer’s disease*. Brain Communications, Volume
 ## Citation
 
 If you use `biodiscvr` in your research, please cite it. You can get the
-citation information by running: citation(“biodiscvr”) after
+citation information by running: `citation("biodiscvr")` after
 installation.
 
 ## Contributing
