@@ -14,7 +14,9 @@ preprocessing:
   min_entries_per_id: 2
   id_column: "RID" # Column defining unique individuals
   criteria_source_file: "data"
-  ignore_columns: ["idx"]
+  ignore_columns: ["idx", "inf_lat_vent", "lateral_ventricle", "choroid_plexus", 
+  "cerebral_white_matter", "hippocampus",
+"pallidum", "putamen", "caudate"]
   # --- Time Calculation Configuration ---
   # Option 1: Calculate from a date column
   date_column: "ScanDate"      # Primary column to look for (date format)

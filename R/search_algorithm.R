@@ -142,13 +142,13 @@
         return(rep(NA_real_, n_rows))
       }
       # Calculation (handle potential zero sum in denominator)
-      sum_uv <- rowSums(d_uv[, selected_features, drop = FALSE], na.rm = TRUE) # Decide NA handling
-      sum_vol <- rowSums(d_vol[, selected_features, drop = FALSE], na.rm = TRUE)
+      sum_uv <- rowSums(d_uv[, selected_features, drop = FALSE], na.rm = F) # Decide NA handling
+      sum_vol <- rowSums(d_vol[, selected_features, drop = FALSE], na.rm = F)
       comp_val <- ifelse(sum_vol == 0, NA_real_, sum_uv / sum_vol)
       
     } else if (var_composition == 1) {
       # --- Simple Arithmetic Mean ---
-      comp_val <- rowMeans(sub_data, na.rm = TRUE) # Decide NA handling
+      comp_val <- rowMeans(sub_data, na.rm = F) # Decide NA handling
       
     } else if (var_composition == 2) {
       # --- Weighted Arithmetic Mean ---

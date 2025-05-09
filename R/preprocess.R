@@ -481,15 +481,15 @@ preprocess_data <- function(loaded_data,
         # --- Step 4: Calculate and Add UV data (if possible) ---
         # Check if both SUV and VOL data exist and are valid after filtering
         if ("data_suv_bi" %in% names(data_processed[[dset_name]]) &&
-            "data_vol" %in% names(data_processed[[dset_name]]) && # Check if data_vol exists
+            "data_vol_bi" %in% names(data_processed[[dset_name]]) && # Check if data_vol_bi exists
             is.data.frame(data_processed[[dset_name]]$data_suv_bi) &&
-            is.data.frame(data_processed[[dset_name]]$data_vol) &&
-            nrow(data_processed[[dset_name]]$data_suv_bi) == nrow(data_processed[[dset_name]]$data_vol) && # Ensure same rows after filtering
+            is.data.frame(data_processed[[dset_name]]$data_vol_bi) &&
+            nrow(data_processed[[dset_name]]$data_suv_bi) == nrow(data_processed[[dset_name]]$data_vol_bi) && # Ensure same rows after filtering
             nrow(data_processed[[dset_name]]$data_suv_bi) > 0) { # Ensure not empty
           
           if(verbose) message(sprintf("  - Calculating UV data (SUV * Volume)..."))
           data_suv_filt <- data_processed[[dset_name]]$data_suv_bi
-          data_vol_filt <- data_processed[[dset_name]]$data_vol
+          data_vol_filt <- data_processed[[dset_name]]$data_vol_bi
           id_col_present_suv <- id_col %in% names(data_suv_filt)
           id_col_present_vol <- id_col %in% names(data_vol_filt)
           
@@ -520,12 +520,12 @@ preprocess_data <- function(loaded_data,
             if(verbose) message(sprintf("    -> Added 'data_uv_bi' data frame with %d columns.", ncol(data_uv)))
             
           } else {
-            warning(sprintf("Dataset '%s': No common numeric columns found between 'data_suv_bi' and 'data_vol' after filtering. Cannot calculate 'data_uv'.", dset_name), call. = FALSE)
+            warning(sprintf("Dataset '%s': No common numeric columns found between 'data_suv_bi' and 'data_vol_bi' after filtering. Cannot calculate 'data_uv'.", dset_name), call. = FALSE)
             # Optionally add an empty data_uv frame? Or leave it NULL? Let's leave it NULL.
             data_processed[[dset_name]]$data_uv <- NULL
           }
         } else {
-          if(verbose) message(sprintf("  - Skipping UV data calculation: 'data_suv_bi' or 'data_vol' missing, empty, non-dataframe, or have mismatched rows after filtering."))
+          if(verbose) message(sprintf("  - Skipping UV data calculation: 'data_suv_bi' or 'data_vol_bi' missing, empty, non-dataframe, or have mismatched rows after filtering."))
           # Ensure data_uv element doesn't exist if calculation skipped
           data_processed[[dset_name]]$data_uv <- NULL
         }
