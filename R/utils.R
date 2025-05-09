@@ -64,6 +64,30 @@
 
 # --- Functions to aid the definition of literature biomarkers ---
 
+# --- Helper function `tr2suvr` ---
+# It needs to return a numeric vector of SUVR values of the same length as nrow(data_suv).
+#' @noRd
+.tr2suvr <- function(dataset_cohort_data, # folder with data.csv and data_suv_bi.csv
+                     var_composition,
+                     fixed_numerator_regs = NULL,
+                     fixed_denominator_regs = NULL,
+                     verbose = FALSE) {
+  
+  features <- names(dataset_cohort_data$data_suv_bi)
+  chromosome <- rep(1.5,length(features))
+  chromosome[features %in% fixed_numerator_regs] <- 0.1
+  chromosome[features %in% fixed_denominator_regs] <- 2.9
+  
+  bio <- .calculate_cvr(chromosome,
+                        dataset_cohort_data, # folder with data.csv and data_suv_bi.csv
+                        features,
+                        var_composition,
+                        fixed_numerator_regs = NULL,
+                        fixed_denominator_regs = NULL,
+                        verbose = FALSE)
+  return(bio) 
+}
+
 #' @importFrom mclust Mclust mclustBIC
 #' @importFrom stats dnorm uniroot sd median quantile IQR na.omit aggregate as.formula
 #' @importFrom dplyr filter select all_of left_join distinct n_distinct between
@@ -139,8 +163,6 @@
 #' @param stage_definitions List of character vectors defining regions for stages (e.g., `$st1`, `$st2`).
 #' @param reference_region Character vector of reference region column name(s).
 #' @param id_col Character string for the unique subject identifier.
-#' @param tr2suvr_func Function. The function to calculate SUVR (e.g., `tr2suvr`).
-#'   Must accept arguments like `target_regions`, `reference_region`, `data_suv`, `data_clinical`.
 #' @param verbose Logical. Print progress messages?
 #'
 #' @return Numeric vector of calculated log-transformed biomarker values, or NULL on failure.
@@ -149,10 +171,9 @@
                                            stage_definitions,
                                            reference_region,
                                            id_col,
-                                           tr2suvr_func, # Pass the actual function
                                            verbose = FALSE) {
   
-  if(verbose) message("    Calculating Braak-staging biomarker...")
+  if(verbose) message("    Calculating DDS...")
   data_clinical <- dataset_data_list$data
   data_suv <- dataset_data_list$data_suv_bi
   
@@ -160,16 +181,15 @@
   stopifnot(
     is.list(stage_definitions), length(stage_definitions) > 0,
     is.character(reference_region), length(reference_region) > 0,
-    is.character(id_col), length(id_col) == 1,
-    is.function(tr2suvr_func)
+    is.character(id_col), length(id_col) == 1
   )
   # Check reference region exists
   if(!all(reference_region %in% names(data_suv))) {
     warning("Reference region(s) not found in data_suv_bi: ", paste(setdiff(reference_region, names(data_suv)), collapse=", "), call.=FALSE); return(NULL)
   }
   # Check ID exists
-  if(!id_col %in% names(data_clinical) || !id_col %in% names(data_suv)) {
-    warning("ID column '", id_col, "' not found in data or data_suv_bi.", call.=FALSE); return(NULL)
+  if(!id_col %in% names(data_clinical)) {
+    warning("ID column '", id_col, "' not found in data", call.=FALSE); return(NULL)
   }
   
   # --- Calculate SUVR and Thresholds per Stage ---
@@ -192,17 +212,16 @@
     }
     
     # Calculate SUVR for this stage using the provided function
-    # Assuming tr2suvr_func handles composition internally based on region lists
+    # Assuming tr2suvr handles composition internally based on region lists
     # And returns a single vector of SUVRs
     stage_suvr <- tryCatch({
-      tr2suvr_func(target_regions = target_regions,
-                   reference_region = reference_region,
-                   data_suv = data_suv,
-                   data_clinical = data_clinical # Pass if needed by tr2suvr
-                   # Pass other args if needed, e.g., var_composition=0 from original code?
-      )
+      .tr2suvr(dataset_cohort_data = dataset_data_list, # folder with data.csv and data_suv_bi.csv
+               var_composition = 0,
+               fixed_numerator_regs = target_regions,
+               fixed_denominator_regs = reference_region,
+               verbose = FALSE)
     }, error = function(e) {
-      warning(sprintf("Stage '%s': tr2suvr_func failed. Error: %s", stage_name, conditionMessage(e)), call.=FALSE)
+      warning(sprintf("Stage '%s': tr2suvr failed. Error: %s", stage_name, conditionMessage(e)), call.=FALSE)
       return(NULL)
     })
     
@@ -214,9 +233,9 @@
     }
     stage_suvr_list[[stage_name]] <- stage_suvr # Store the calculated SUVR vector
     
-    # Fit GMM on exponentiated SUVR (handle potential errors/warnings)
+    # Fit GMM on SUVR (handle potential errors/warnings)
     # Use only non-NA, finite, positive values for GMM fitting
-    valid_exp_suvr <- exp(stage_suvr)
+    valid_exp_suvr <- stage_suvr
     valid_exp_suvr <- valid_exp_suvr[!is.na(valid_exp_suvr) & is.finite(valid_exp_suvr) & valid_exp_suvr > 0]
     
     if(length(valid_exp_suvr) < 10) { # Need sufficient points for GMM
@@ -248,10 +267,7 @@
   df_stage_suvr <- as.data.frame(stage_suvr_list) # Combine stage SUVRs
   # Ensure column order matches stage order for indexing later
   df_stage_suvr <- df_stage_suvr[, names(stage_definitions), drop=FALSE]
-  
-  # Exponentiate for comparison with thresholds
-  df_exp_suvr <- exp(df_stage_suvr)
-  
+
   # Create positivity matrix (handle NA thresholds by treating comparison as FALSE)
   valid_thresholds <- tau_posit_stages[!is.na(tau_posit_stages)]
   valid_stage_names <- names(valid_thresholds)
@@ -261,7 +277,7 @@
   positivity_matrix <- matrix(FALSE, nrow = n_rows, ncol = length(valid_stage_names),
                               dimnames = list(NULL, valid_stage_names))
   for(stage_name in valid_stage_names) {
-    positivity_matrix[, stage_name] <- df_exp_suvr[[stage_name]] > valid_thresholds[stage_name]
+    positivity_matrix[, stage_name] <- df_stage_suvr[[stage_name]] > valid_thresholds[stage_name]
   }
   # Handle NAs in positivity matrix if SUVRs were NA - treat as FALSE
   positivity_matrix[is.na(positivity_matrix)] <- FALSE
@@ -269,7 +285,7 @@
   # Get the index (1-based) of the rightmost positive stage
   rightmost_positivity_idx <- apply(positivity_matrix, 1, function(row) {
     pos_indices <- which(row)
-    ifelse(length(pos_indices) > 0, max(pos_indices), 0) # Return 0 if none are positive
+    ifelse(length(pos_indices) > 0, max(pos_indices), 1) # Return 1 if none are positive
   })
   
   # --- Propagate Baseline Stage ---
@@ -288,14 +304,12 @@
   
   # Merge baseline stage back and propagate
   stage_data <- dplyr::left_join(stage_data, baseline_stage, by = id_col)
-  # If baseline stage is 0 (no positivity), keep original stage index? Or force 0?
   # Original code implies using the baseline stage always. Let's follow that.
   # If baseline_stage_idx is NA (e.g., only NA times?), use original index? Default to 0.
   final_stage_idx <- stage_data$baseline_stage_idx
   final_stage_idx[is.na(final_stage_idx)] <- 0 # Default to 0 if baseline couldn't be determined
   
   # --- Select Value from Corresponding Stage SUVR ---
-  # Use the original log-transformed SUVRs stored in df_stage_suvr
   final_value_vector <- rep(NA_real_, n_rows)
   valid_final_indices <- final_stage_idx > 0 & final_stage_idx <= ncol(df_stage_suvr)
   
@@ -316,19 +330,3 @@
 }
 
 
-# --- Helper function `tr2suvr` ---
-# !! IMPORTANT !!
-# This is a placeholder. You MUST provide the actual implementation
-# based on where this function comes from or how it should work.
-# It needs to return a numeric vector of SUVR values of the same length as nrow(data_suv).
-#' @noRd
-tr2suvr <- function(target_regions, reference_region, data_suv, data_clinical, ...) {
-  warning("Placeholder function 'tr2suvr' called. Replace with actual implementation.", call.=FALSE)
-  # Example: Simple mean ratio (replace with actual logic)
-  if(!all(target_regions %in% names(data_suv)) || !all(reference_region %in% names(data_suv))) return(rep(NA_real_, nrow(data_suv)))
-  num <- rowMeans(data_suv[, target_regions, drop=FALSE], na.rm=TRUE)
-  den <- rowMeans(data_suv[, reference_region, drop=FALSE], na.rm=TRUE)
-  ratio <- num / den
-  ratio[den <= 0 | is.na(den)] <- NA
-  return(log(ratio)) # Assuming it should return log SUVR based on later code
-}

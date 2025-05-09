@@ -14,7 +14,9 @@ preprocessing:
   min_entries_per_id: 2
   id_column: "RID" # Column defining unique individuals
   criteria_source_file: "data"
-  ignore_columns: ["idx"]
+  ignore_columns: ["idx", "inf_lat_vent", "lateral_ventricle", "choroid_plexus", 
+  "cerebral_white_matter", "hippocampus",
+"pallidum", "putamen", "caudate"]
   # --- Time Calculation Configuration ---
   # Option 1: Calculate from a date column
   date_column: "ScanDate"      # Primary column to look for (date format)
@@ -68,7 +70,7 @@ power_params:
 # These are examples; adjust based on your specific GA implementation and needs.
 genetic_algorithm:
   popSize: 32           # Population size per generation. Time scales linearly.
-  maxiter: 600          # Maximum number of generations (iterations) default 600. Time scales linearly.
+  maxiter: 30          # Maximum number of generations (iterations) default 600. Time scales linearly.
   run: 100              # Early stopping if no fitness improvement in X generations default 100
   pmutation: 0.5        # Probability of mutation
   crossover: "gareal_blxCrossover"

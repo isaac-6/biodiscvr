@@ -45,7 +45,7 @@ File content below.
 - DX: cognitively impaired binary diagnostic (DX = {0,1})
 - RID: unique individual ID, common to all their visits/scans
 - AB: binary amyloid positivity (1 if TRUE, 0 if FALSE)
-- ScanDate: date (Y%m%d) of the scan, for each row.
+- ScanDate OR years.from.baseline
 
 `data_suv_bi.csv` is the SUV or SUVR values of bilateral regions. The column names should match the ones from the first column of the `dict_suv.csv` file in "./inst/files/"; otherwise, a new column can be added in this file, with matching regional names.
 `data_vol_bi.csv` is the bilateral volumes. (will be needed to evaluate literature biomarkers).
