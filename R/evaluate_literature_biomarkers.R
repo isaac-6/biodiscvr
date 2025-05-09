@@ -3,10 +3,10 @@
 #' Calculates and evaluates the performance (Rep, SepAB, SSE) of a predefined
 #' set of literature-based biomarkers across specified datasets and groups.
 #'
-#' @param literature_defs List. A named list where each element defines a
+#' @param lit_biomarker_file_path Path to literature biomarkers file. A named list where each element defines a
 #'   literature biomarker. Each element must be a list containing at least:
 #'   `$name` (character), `$numerator_regions` (character vector),
-#'   `$denominator_regions` (character vector), and `$var_composition` (numeric, 0-3).
+#'   `$denominator_regions` (character vector), and `$var_composition` (numeric, 0-3, or -1 if calculation is not traditional SUVR).
 #'   Optionally include `$description` and `$source_citation`.
 #' @param prepared_data_list List. The output from `preprocess_datasets()`,
 #'   containing filtered data for multiple datasets.
