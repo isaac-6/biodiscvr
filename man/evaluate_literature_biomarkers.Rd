@@ -19,6 +19,12 @@ evaluate_literature_biomarkers(
 )
 }
 \arguments{
+\item{lit_biomarker_file_path}{Path to literature biomarkers file. A named list where each element defines a
+literature biomarker. Each element must be a list containing at least:
+\verb{$name} (character), \verb{$numerator_regions} (character vector),
+\verb{$denominator_regions} (character vector), and \verb{$var_composition} (numeric, 0-3, or -1 if calculation is not traditional SUVR).
+Optionally include \verb{$description} and \verb{$source_citation}.}
+
 \item{prepared_data_list}{List. The output from \code{preprocess_datasets()},
 containing filtered data for multiple datasets.}
 
@@ -41,12 +47,6 @@ results as a \emph{new} CSV file (overwrites if exists).}
 \item{id_col}{Character string. Name of the unique ID column. Defaults to "RID".}
 
 \item{verbose}{Logical. Print progress messages? Defaults to TRUE.}
-
-\item{literature_defs}{List. A named list where each element defines a
-literature biomarker. Each element must be a list containing at least:
-\verb{$name} (character), \verb{$numerator_regions} (character vector),
-\verb{$denominator_regions} (character vector), and \verb{$var_composition} (numeric, 0-3).
-Optionally include \verb{$description} and \verb{$source_citation}.}
 }
 \value{
 A data frame containing the evaluation results. Each row corresponds to
