@@ -1,6 +1,4 @@
 # --- Internal Helper Functions ---
-# These are not exported for the user but used by fevalMethod_...
-# No roxygen required unless you want detailed internal docs (@keywords internal)
 
 # Repeatability as error% (Standard Deviation of Residuals)
 # Input: A fitted model object (e.g., from lmer)
@@ -87,7 +85,6 @@
     stop(sprintf("Power parameters for group '%s' in config must be a list containing: %s",
                  group, paste(required_keys, collapse=", ")))
   }
-  # Optionally add type checks for pct_change, power (numeric) and trial_time_points (numeric vector)
   
   # --- Set Group Specific DX value ---
   group_DX <- NA_integer_
@@ -152,11 +149,83 @@
 
 
 
+#' @importFrom lme4 lmer lmerControl
+#' @importFrom longpower lmmpower
+#' @importFrom stats setNames na.omit
+#' @importFrom methods is
+
+#' Internal helper to calculate ONLY SSE for a specific group
+#'
+#' Calculates Sample Size Estimate (SSE) for a given diagnostic group.
+#'
+#' @param data Data frame containing prepared modeling data. Must include columns
+#'   'DX' (0/1), 'AB' (TRUE/FALSE), 'value', 'time', 'RID' (or id_col).
+#' @param group Character string, either "CU" or "CI".
+#' @param eq_group Formula object for the within-group repeatability/SSE model.
+#' @param all_power_params List. The *entire* power_params structure loaded
+#'   from the config file (expected to have keys like 'CI', 'CU').
+#' @param lmer_control Control object for lmer fitting.
+#' @param id_col Character string. Name of the ID column.
+#'
+#' @return A single numeric value for SSE, or NA if model fails or data insufficient.
+#'
+#' @noRd
+.feval_group_sse_only <- function(data, group, eq_group, all_power_params, lmer_control, id_col) {
+  # --- Input Validation (simplified for internal use, assumes caller validates more) ---
+  stopifnot(
+    is.data.frame(data),
+    all(c("DX", "AB", "value", "time", id_col) %in% names(data)),
+    is.character(group), length(group) == 1, group %in% c("CU", "CI"),
+    inherits(eq_group, "formula"),
+    is.list(all_power_params),
+    methods::is(lmer_control, "lmerControl")
+  )
+  
+  # --- Get Group-Specific Power Parameters ---
+  if (!group %in% names(all_power_params)) {
+    warning(sprintf("Power params for group '%s' not found.", group), call.=F); return(NA_real_)
+  }
+  group_power_params <- all_power_params[[group]]
+  required_keys <- c("pct_change", "trial_time_points", "power")
+  if (!is.list(group_power_params) || !all(required_keys %in% names(group_power_params))) {
+    warning(sprintf("Power params for group '%s' invalid.", group), call.=F); return(NA_real_)
+  }
+  
+  # --- Set Group Specific DX value ---
+  group_DX <- if(group == "CI") 1L else 0L
+  
+  # --- Filter data and Calculate SSE ---
+  eSSE <- NA_real_
+  data_filtered_sse <- data[data$DX == group_DX & data$AB == TRUE & !is.na(data$AB), ]
+  
+  # Check for sufficient data (add min_rows if needed)
+  min_ids_threshold <- 5 # Example
+  if (nrow(data_filtered_sse) < 10 || dplyr::n_distinct(data_filtered_sse[[id_col]]) < min_ids_threshold) {
+    warning(sprintf("Group '%s': Not enough AB positive data (%d rows, %d IDs) for SSE model.",
+                    group, nrow(data_filtered_sse), dplyr::n_distinct(data_filtered_sse[[id_col]])), call. = FALSE)
+    return(NA_real_)
+  }
+  
+  model_sse <- try(lme4::lmer(eq_group, data = data_filtered_sse, REML = TRUE, control = lmer_control), silent = TRUE)
+  
+  if (!inherits(model_sse, "try-error")) {
+    pow_res <- try(longpower::lmmpower(model_sse,
+                                       pct.change = group_power_params$pct_change,
+                                       t = unlist(group_power_params$trial_time_points),
+                                       power = group_power_params$power), silent = TRUE)
+    if (!inherits(pow_res, "try-error") && !is.null(pow_res$n)) {
+      eSSE <- pow_res$n[1]
+    } else {
+      pow_err_msg <- if(inherits(pow_res, "try-error")) conditionMessage(attr(pow_res, "condition")) else "returned NULL or no 'n'"
+      warning(sprintf("Group '%s': longpower::lmmpower failed for SSE: %s", group, pow_err_msg), call. = FALSE)
+    }
+  } else {
+    warning(sprintf("Group '%s': Failed to fit SSE model (eq_group): %s", group, conditionMessage(attr(model_sse, "condition"))), call. = FALSE)
+  }
+  return(eSSE)
+}
 
 
-
-
-# Place this in R/model_evaluation.R along with .feval_group and others
 
 #' @importFrom lme4 lmer lmerControl bootMer
 #' @importFrom longpower lmmpower
