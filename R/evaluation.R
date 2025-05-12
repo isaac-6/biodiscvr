@@ -149,14 +149,14 @@
 
 
 
+
+#' Internal helper to calculate ONLY SSE for a specific group
+#' Calculates Sample Size Estimate (SSE) for a given diagnostic group.
+#' 
 #' @importFrom lme4 lmer lmerControl
 #' @importFrom longpower lmmpower
 #' @importFrom stats setNames na.omit
 #' @importFrom methods is
-
-#' Internal helper to calculate ONLY SSE for a specific group
-#'
-#' Calculates Sample Size Estimate (SSE) for a given diagnostic group.
 #'
 #' @param data Data frame containing prepared modeling data. Must include columns
 #'   'DX' (0/1), 'AB' (TRUE/FALSE), 'value', 'time', 'RID' (or id_col).
