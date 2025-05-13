@@ -103,6 +103,7 @@ run_ablation <- function(
   required_discovery_cols <- c("regs_numerator", "regs_denominator", "var_composition") # Minimum needed
   # Add other columns you want to carry over to the output, e.g., experiment_tag, discovery_dataset, group_evaluated, fitness_value
   carry_over_cols <- c("experiment_tag", "discovery_dataset", "group_evaluated", "fitness_value", "bilateral") # Example
+  carry_over_cols <- intersect(names(discovery_df), c(carry_over_cols, "evaluation_dataset", "evaluation_group")) # in case evaluation csv is given
   all_needed_cols <- unique(c(required_discovery_cols, carry_over_cols))
   
   missing_discovery_cols <- setdiff(all_needed_cols, names(discovery_df))
@@ -166,7 +167,13 @@ run_ablation <- function(
     
     # cohorts/datasets to evaluate. If NULL, takes the one(s) used for discover from the data row.
     if (is.null(groups_for_ablation_eval)) {
-      eval_dsets = strsplit(biomarker_row$discovery_dataset, "\\|")[[1]]
+      if("evaluation_dataset" %in% names(biomarker_row)){
+        # this is the csv from run_evaluation
+        eval_dsets = strsplit(biomarker_row$evaluation_dataset, "\\|")[[1]]
+      } else {
+        # this is the csv from run_experiments
+        eval_dsets = strsplit(biomarker_row$discovery_dataset, "\\|")[[1]]
+      }
       
     } else {
       eval_dsets <- datasets_for_ablation_eval
