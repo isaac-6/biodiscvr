@@ -59,7 +59,7 @@ The vignette covers:
 *   Preprocessing data with `preprocess_datasets()`.
 *   Generating demographic tables with `create_demographics_table()`.
 *   Running discovery experiments with `run_experiments()`.
-*   (placeholder) Evaluating literature biomarkers with `evaluate_literature_biomarkers()`.
+*   Evaluating literature biomarkers with `evaluate_literature_biomarkers()`.
 
 ## Core Functions
 
@@ -70,7 +70,7 @@ The package provides several key functions for the workflow:
 *   `preprocess_datasets()`: Filters data based on minimum entries and inclusion criteria.
 *   `create_demographics_table()`: Generates demographic summary tables.
 *   `run_experiments()`: Orchestrates single- and multi-cohort discovery runs based on an experiments configuration file.
-<!-- *   `evaluate_literature_biomarkers()`: Evaluates predefined biomarkers on the processed data. -->
+*   `evaluate_literature_biomarkers()`: Evaluates predefined biomarkers on the processed data.
 *   `biodiscvr_single()`: Runs the CVR discovery process for a single dataset (typically called by `run_experiments`).
 *   `biodiscvr_multicohort()`: Runs the CVR discovery process optimized across multiple datasets (typically called by `run_experiments`).
 

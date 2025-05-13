@@ -30,7 +30,7 @@ We will cover the following steps:
 4.  Preprocessing data based on criteria using `preprocess_datasets()`.
 5.  Generating demographic summaries using `create_demographics_table()`.
 6.  Running discovery experiments (single-cohort) using `run_experiments()`.
-7.  Evaluating predefined literature biomarkers using `evaluate_literature_biomarkers()`. (to be implemented)
+7.  Evaluating predefined literature biomarkers using `evaluate_literature_biomarkers()`.
 8.  Identifying key output files for reporting.
 
 **Note:** Because this vignette uses placeholders for user-specific file paths, the R code chunks are generally set to `eval=FALSE`. You will need to copy, paste, and adapt the code chunks into your own R script or console, replacing the placeholder paths with the actual locations of your files.
@@ -258,46 +258,46 @@ message("Main results will be appended to: ", main_results_csv)
 
 *Expected Output (when run manually):* Progress messages printed. The `main_results_csv` file is populated. Plots may be saved.
 
-<!-- ## Step 6: Evaluating Literature Biomarkers -->
+## Step 6: Evaluating Literature Biomarkers
 
-<!-- Evaluates standard biomarkers defined in the package-internal `literature_biomarkers.yaml`. -->
+Evaluates biomarkers from the literature defined in the package-internal `literature_biomarkers.yaml`.
 
-<!-- ```{r eval_literature, eval=FALSE} -->
-<!-- literature_evaluation_df <- NULL -->
-<!-- # Ensure the literature definitions file exists -->
-<!-- if (!file.exists(pkg_literature_defs_file)) { -->
-<!--   warning("Package literature biomarker file not found. Skipping evaluation.", immediate.=TRUE) -->
-<!-- } else if (is.null(preprocessed_data_list)) { -->
-<!--   message("Skipping literature evaluation as preprocessed data is not available.") -->
-<!-- } else { -->
-<!--   # Load the definitions -->
-<!--   literature_defs_yaml <- yaml::read_yaml(pkg_literature_defs_file) -->
-<!--   literature_defs_list <- literature_defs_yaml$biomarkers -->
+```{r eval_literature, eval=FALSE}
+literature_evaluation_df <- NULL
+# Ensure the literature definitions file exists
+if (!file.exists(pkg_literature_defs_file)) {
+  warning("Package literature biomarker file not found. Skipping evaluation.", immediate.=TRUE)
+} else if (is.null(preprocessed_data_list)) {
+  message("Skipping literature evaluation as preprocessed data is not available.")
+} else {
+  # Load the definitions
+  literature_defs_yaml <- yaml::read_yaml(pkg_literature_defs_file)
+  literature_defs_list <- literature_defs_yaml$biomarkers
 
-<!--   # Run the evaluation -->
-<!--   literature_evaluation_df <- evaluate_literature_biomarkers( -->
-<!--     literature_defs = literature_defs_list, -->
-<!--     prepared_data_list = preprocessed_data_list, -->
-<!--     config = checked_output$config, -->
-<!--     datasets_to_evaluate = names(preprocessed_data_list), -->
-<!--     groups_to_evaluate = c("CU", "CI"), -->
-<!--     calculate_ci = FALSE, # Keep this FALSE for vignette speed -->
-<!--     output_evaluation_csv_path = literature_results_csv, # Save to separate CSV -->
-<!--     verbose = FALSE # Keep vignette output cleaner -->
-<!--   ) -->
+  # Run the evaluation
+  literature_evaluation_df <- evaluate_literature_biomarkers(
+    literature_defs = literature_defs_list,
+    prepared_data_list = preprocessed_data_list,
+    config = checked_output$config,
+    datasets_to_evaluate = names(preprocessed_data_list),
+    groups_to_evaluate = c("CU", "CI"),
+    calculate_ci = FALSE, # Keep this FALSE for vignette speed
+    output_evaluation_csv_path = literature_results_csv, # Save to separate CSV
+    verbose = FALSE # Keep vignette output cleaner
+  )
 
-<!--   # Display head of results table -->
-<!--   if(!is.null(literature_evaluation_df)) { -->
-<!--       message("Literature evaluation complete. Results saved to: ", literature_results_csv) -->
-<!--       # print(head(literature_evaluation_df)) # Optionally show results -->
-<!--   } else { -->
-<!--       message("Literature evaluation did not produce results.") -->
-<!--   } -->
-<!-- } -->
+  # Display head of results table
+  if(!is.null(literature_evaluation_df)) {
+      message("Literature evaluation complete. Results saved to: ", literature_results_csv)
+      # print(head(literature_evaluation_df)) # Optionally show results
+  } else {
+      message("Literature evaluation did not produce results.")
+  }
+}
 
-<!-- ``` -->
+```
 
-<!-- *Expected Output:* A data frame `literature_evaluation_df` (if successful) and results saved to `literature_results_csv`. -->
+*Expected Output:* A data frame `literature_evaluation_df` (if successful) and results saved to `literature_results_csv`.
 
 ## Reporting Output Files
 
@@ -307,9 +307,9 @@ After running the workflow by adapting the code chunks above in your own script,
     *   Path: `main_results_csv` (e.g., `your/output/folder/discovery_evaluation_results.csv`)
     *   Content: Results from `run_experiments`, including single- and multi-cohort runs defined in the package's `experiments.yaml`.
 
-2.  **(to be done) Literature Biomarker Evaluation Results:**
+2.  **Literature Biomarker Evaluation Results:**
     *   Path: `literature_results_csv` (e.g., `your/output/folder/literature_evaluation_results.csv`)
-    *   Content: Performance metrics for standard biomarkers defined in the package's `literature_biomarkers.yaml`, evaluated on your data.
+    *   Content: Performance metrics for literature biomarkers defined in the package's `literature_biomarkers.yaml`, evaluated on your data.
 
 3.  **Demographics Tables:**
     *   Path: Inside the `demographics_dir` (e.g., `your/output/folder/demographics/`)
