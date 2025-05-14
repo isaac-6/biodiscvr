@@ -29,7 +29,7 @@ You can install the development version of `biodiscvr` from
 
 ``` r
 if (!require("remotes")) install.packages("remotes")
-remotes::install_github("isaac-6/biodiscvr")
+remotes::install_github("isaac-6/biodiscvr", build_vignettes = TRUE)
 ```
 
 **Note:** You may need Rtools (Windows) or Xcode Command Line Tools
