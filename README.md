@@ -20,16 +20,17 @@ particularly suited for analyzing longitudinal multi-cohort datasets.
 The core functionality utilizes a Genetic Algorithm (GA) to search the
 feature space for optimal numerator and denominator combinations based
 on biomarker performance metrics calculated using linear mixed-effects
-models (Repeatability, Group Separation, Sample Size Estimates).
+models (Group Separation, Sample Size Estimates).
 
 ## Installation
 
 You can install the development version of `biodiscvr` from
-[GitHub](https://github.com/isaac-6/biodiscvr) with:
+[GitHub](https://github.com/isaac-6/biodiscvr), with or without
+vignettes, with:
 
 ``` r
 if (!require("remotes")) install.packages("remotes")
-remotes::install_github("isaac-6/biodiscvr", build_vignettes = TRUE)
+remotes::install_github("isaac-6/biodiscvr", dependencies = TRUE, build_vignettes = FALSE)
 ```
 
 **Note:** You may need Rtools (Windows) or Xcode Command Line Tools
@@ -75,10 +76,14 @@ The package provides several key functions for the workflow:
   runs based on an experiments configuration file.
 - `evaluate_literature_biomarkers()`: Evaluates predefined biomarkers on
   the processed data.
-- `biodiscvr_single()`: Runs the CVR discovery process for a single
-  dataset (typically called by `run_experiments`).
-- `biodiscvr_multicohort()`: Runs the CVR discovery process optimized
-  across multiple datasets (typically called by `run_experiments`).
+- `run_ablation()`: Re-evaluates the output of evaluation (or results),
+  iteratively removing regions to improve SSE.
+
+Additional functions to perform single experiments \*
+`biodiscvr_single()`: Runs the CVR discovery process for a single
+dataset (typically called by `run_experiments`). \*
+`biodiscvr_multicohort()`: Runs the CVR discovery process optimized
+across multiple datasets (typically called by `run_experiments`).
 
 Consult the help page for each function (e.g., `?run_experiments`) for
 detailed argument descriptions.
