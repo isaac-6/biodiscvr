@@ -8,7 +8,7 @@
 #'   `$name` (character), `$numerator_regions` (character vector),
 #'   `$denominator_regions` (character vector), and `$var_composition` (numeric, 0-3, or -1 if calculation is not traditional SUVR).
 #'   Optionally include `$description` and `$source_citation`.
-#' @param prepared_data_list List. The output from `preprocess_datasets()`,
+#' @param prepared_data_list List. The output from `preprocess_data()`,
 #'   containing filtered data for multiple datasets.
 #' @param config List. The loaded main configuration object.
 #' @param datasets_to_evaluate Character vector. Names of the datasets within

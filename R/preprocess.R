@@ -13,6 +13,7 @@
 #'   main configuration file (specified by `config_filename`).
 #' @param config_filename Character string. Name of the YAML configuration
 #'   file expected within `files_path`. Defaults to "config.yaml".
+#' @param dict_suv_filename Dictionary file to manage different feature naming conventions
 #' @param log_directory Character string or NULL. Path to the **directory** where
 #'   timestamped log files should be written. If NULL (default), logging to
 #'   file is disabled. The directory will be created if it doesn't exist.
@@ -83,6 +84,7 @@
 preprocess_data <- function(loaded_data,
                             files_path,
                             config_filename = "config.yaml",
+                            dict_suv_filename = "dict_suv.csv",
                             log_directory = NULL,
                             scandate_column = "ScanDate",
                             log_file_prefix = "preprocess_log_",
@@ -206,7 +208,8 @@ preprocess_data <- function(loaded_data,
   if (!is.list(config$inclusion_criteria)) stop("Config 'inclusion_criteria' section must be a list.")
   
   # --- Load SUV Dictionary ---
-  dict_suv_path <- base::file.path(files_path, "dict_suv.csv")
+  # dict_suv_path <- base::file.path(files_path, "dict_suv.csv")
+  dict_suv_path <- file.path(files_path, dict_suv_filename)
   dict_suv <- NULL
   if (!base::file.exists(dict_suv_path)) stop("SUV dictionary not found: ", dict_suv_path)
   tryCatch({

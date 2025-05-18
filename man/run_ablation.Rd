@@ -21,11 +21,11 @@ file containing discovered biomarkers. Expected columns include at least:
 \code{regs_numerator}, \code{regs_denominator}, \code{var_composition}, and identifiers
 like \code{discovery_dataset}, \code{experiment_tag}, \code{group_evaluated}.}
 
-\item{prepared_data_list}{List. The output from \code{preprocess_datasets()},
+\item{prepared_data_list}{List. The output from \code{preprocess_data()},
 containing filtered data for multiple datasets.}
 
 \item{config}{List. The loaded main configuration object from
-\code{check_and_prepare_data$config}.}
+\code{preprocess_data$config}.}
 
 \item{output_ablation_results_csv_path}{Character string. Full path to save the
 ablation results as a \emph{new} CSV file. If the file exists, it will be

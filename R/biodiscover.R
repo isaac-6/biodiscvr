@@ -12,7 +12,7 @@
 #'   characteristics will be used for the primary fitness evaluation by the
 #'   internal `.calculate_fitness` function.
 #' @param config List. The loaded configuration object, typically from
-#'   `check_and_prepare_data$config`. Must contain sections like
+#'   `preprocess_data$config`. Must contain sections like
 #'   `model_equations`, `power_params`, `preprocessing`, and `genetic_algorithm`.
 #' @param features Character vector. Names of columns in `dataset_data$data_suv_bi`
 #'   to be considered as features by the GA. If NULL (default), uses all numeric

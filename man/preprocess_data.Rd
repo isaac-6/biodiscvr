@@ -8,6 +8,7 @@ preprocess_data(
   loaded_data,
   files_path,
   config_filename = "config.yaml",
+  dict_suv_filename = "dict_suv.csv",
   log_directory = NULL,
   scandate_column = "ScanDate",
   log_file_prefix = "preprocess_log_",
@@ -27,6 +28,8 @@ main configuration file (specified by \code{config_filename}).}
 
 \item{config_filename}{Character string. Name of the YAML configuration
 file expected within \code{files_path}. Defaults to "config.yaml".}
+
+\item{dict_suv_filename}{Dictionary file to manage different feature naming conventions}
 
 \item{log_directory}{Character string or NULL. Path to the \strong{directory} where
 timestamped log files should be written. If NULL (default), logging to

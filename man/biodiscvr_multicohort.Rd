@@ -26,7 +26,7 @@ biodiscvr_multicohort(
 )
 }
 \arguments{
-\item{preprocessed_data}{List. The output from \code{preprocess_datasets}, containing
+\item{preprocessed_data}{List. The output from \code{preprocess_data}, containing
 the potentially filtered \verb{$data} list for multiple cohorts and \verb{$config}.}
 
 \item{datasets_to_run}{Character vector. Names of the datasets within
@@ -35,7 +35,7 @@ the potentially filtered \verb{$data} list for multiple cohorts and \verb{$confi
 \item{group}{Character string. The group ("CU" or "CI") to use for evaluating
 fitness via the internal \code{.calculate_fitness} function within each cohort.}
 
-\item{config}{List. The loaded configuration object from \code{check_and_prepare_data}.}
+\item{config}{List. The loaded configuration object from \code{preprocess_data}.}
 
 \item{features}{Character vector. Names of columns in \code{data_suv_bi} frames
 to be considered as features. If NULL (default), uses common numeric columns

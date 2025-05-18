@@ -55,9 +55,8 @@ vignette("biodiscvr", package = "biodiscvr")
 ```
 
 The vignette covers: \* Setting up your data directories and output
-paths. \* Loading data with `load_datasets()`. \* Checking and preparing
-data with `check_and_prepare_data()`. \* Preprocessing data with
-`preprocess_datasets()`. \* Generating demographic tables with
+paths. \* Loading data with `load_datasets()`. \* Preprocessing data
+with `preprocess_data()`. \* Generating demographic tables with
 `create_demographics_table()`. \* Running discovery experiments with
 `run_experiments()`. \* Evaluating literature biomarkers with
 `evaluate_literature_biomarkers()`.
@@ -67,10 +66,9 @@ data with `check_and_prepare_data()`. \* Preprocessing data with
 The package provides several key functions for the workflow:
 
 - `load_datasets()`: Loads data from structured directories.
-- `check_and_prepare_data()`: Validates data, prepares SUV columns based
-  on dictionary matching/renaming.
-- `preprocess_datasets()`: Filters data based on minimum entries and
-  inclusion criteria.
+- `preprocess_data()`: Validates data, prepares SUV columns based on
+  dictionary matching/renaming. Filters data based on minimum entries
+  and inclusion criteria.
 - `create_demographics_table()`: Generates demographic summary tables.
 - `run_experiments()`: Orchestrates single- and multi-cohort discovery
   runs based on an experiments configuration file.

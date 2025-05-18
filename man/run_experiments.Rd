@@ -19,11 +19,11 @@ run_experiments(
 )
 }
 \arguments{
-\item{prepared_data_list}{List. The output from \code{preprocess_datasets()},
+\item{prepared_data_list}{List. The output from \code{preprocess_data()},
 containing filtered data for multiple datasets (e.g., \code{list(ADNI=list(data=..., data_suv_bi=...), MAYO=...)}).}
 
 \item{config}{List. The loaded main configuration object (output from
-\code{check_and_prepare_data$config}). Must contain sections like
+\code{preprocess_data$config}). Must contain sections like
 \code{preprocessing}, \code{model_equations}, \code{power_params}, \code{genetic_algorithm}.}
 
 \item{groups}{groups to run the experiments for. Defaults to c("CU", "CI")}

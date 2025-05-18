@@ -8,10 +8,10 @@
 #' using single-cohort results as reference. All primary results are appended to
 #' a single CSV file.
 #'
-#' @param prepared_data_list List. The output from `preprocess_datasets()`,
+#' @param prepared_data_list List. The output from `preprocess_data()`,
 #'   containing filtered data for multiple datasets (e.g., `list(ADNI=list(data=..., data_suv_bi=...), MAYO=...)`).
 #' @param config List. The loaded main configuration object (output from
-#'   `check_and_prepare_data$config`). Must contain sections like
+#'   `preprocess_data$config`). Must contain sections like
 #'   `preprocessing`, `model_equations`, `power_params`, `genetic_algorithm`.
 #' @param groups groups to run the experiments for. Defaults to c("CU", "CI")
 #' @param experiments_config_path Character string. Path to the YAML file defining

@@ -478,7 +478,7 @@
 #' @param reference_dna Numeric vector. The 'dna' representing the reference
 #'   biomarker (e.g., a standard composite or a previously known good solution).
 #' @param all_data List. The complete data structure returned by
-#'   `check_and_prepare_data()`.
+#'   `preprocess_data()`.
 #' @param datasets_to_use Character vector. Names of the datasets within
 #'   `all_data` to include (must match those used in the main fitness function).
 #' @param get_suvr_function Function. The function to calculate the biomarker

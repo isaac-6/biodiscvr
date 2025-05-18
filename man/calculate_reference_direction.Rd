@@ -20,7 +20,7 @@ calculate_reference_direction(
 biomarker (e.g., a standard composite or a previously known good solution).}
 
 \item{all_data}{List. The complete data structure returned by
-\code{check_and_prepare_data()}.}
+\code{preprocess_data()}.}
 
 \item{datasets_to_use}{Character vector. Names of the datasets within
 \code{all_data} to include (must match those used in the main fitness function).}

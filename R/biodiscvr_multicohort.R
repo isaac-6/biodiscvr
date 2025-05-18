@@ -4,13 +4,13 @@
 #' on aggregated performance across multiple specified datasets. The GA aims
 #' to maximize the aggregated fitness.
 #'
-#' @param preprocessed_data List. The output from `preprocess_datasets`, containing
+#' @param preprocessed_data List. The output from `preprocess_data`, containing
 #'   the potentially filtered `$data` list for multiple cohorts and `$config`.
 #' @param datasets_to_run Character vector. Names of the datasets within
 #'   `preprocessed_data` to include in the multi-cohort fitness evaluation.
 #' @param group Character string. The group ("CU" or "CI") to use for evaluating
 #'   fitness via the internal `.calculate_fitness` function within each cohort.
-#' @param config List. The loaded configuration object from `check_and_prepare_data`.
+#' @param config List. The loaded configuration object from `preprocess_data`.
 #' @param features Character vector. Names of columns in `data_suv_bi` frames
 #'   to be considered as features. If NULL (default), uses common numeric columns
 #'   (excluding ID) found across *all* specified `datasets_to_run`.
@@ -346,11 +346,12 @@ biodiscvr_multicohort <- function(preprocessed_data,
     
     if (length(features) == 0) stop("User-specified features do not overlap with common features.")
     
-    n_features <- length(features)
-    
     message(sprintf("Using %d user-specified common features.", length(features)))
+  } else {
+    features <- setdiff(common_features, c(fixed_numerator_regs, fixed_denominator_regs)) 
   }
   
+  n_features <- length(features)
   
   # --- GA Bounds & Variables (n_vars = n_features) ---
   n_vars <- n_features # Correction based on feedback

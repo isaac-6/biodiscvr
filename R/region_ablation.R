@@ -9,9 +9,9 @@
 #' @param initial_denominator_regs Character vector of initial denominator regions.
 #' @param var_composition Numeric. Parameter indicating how features are combined
 #'   (e.g., 0 = volume-weighed, 1 = arithmetic mean). Passed to internal CVR calculation.
-#' @param prepared_data_list List. The output from `preprocess_datasets()`,
+#' @param prepared_data_list List. The output from `preprocess_data()`,
 #'   containing filtered data for multiple datasets.
-#' @param config List. The loaded main configuration object from `check_and_prepare_data$config`.
+#' @param config List. The loaded main configuration object from `preprocess_data$config`.
 #'   Must contain `preprocessing$id_column`, `model_equations$eq_group_string`,
 #'   and `power_params`.
 #' @param datasets_to_evaluate Character vector. Names of the datasets within

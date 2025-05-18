@@ -25,7 +25,7 @@ literature biomarker. Each element must be a list containing at least:
 \verb{$denominator_regions} (character vector), and \verb{$var_composition} (numeric, 0-3, or -1 if calculation is not traditional SUVR).
 Optionally include \verb{$description} and \verb{$source_citation}.}
 
-\item{prepared_data_list}{List. The output from \code{preprocess_datasets()},
+\item{prepared_data_list}{List. The output from \code{preprocess_data()},
 containing filtered data for multiple datasets.}
 
 \item{config}{List. The loaded main configuration object.}

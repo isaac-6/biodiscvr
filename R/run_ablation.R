@@ -9,10 +9,10 @@
 #'   file containing discovered biomarkers. Expected columns include at least:
 #'   `regs_numerator`, `regs_denominator`, `var_composition`, and identifiers
 #'   like `discovery_dataset`, `experiment_tag`, `group_evaluated`.
-#' @param prepared_data_list List. The output from `preprocess_datasets()`,
+#' @param prepared_data_list List. The output from `preprocess_data()`,
 #'   containing filtered data for multiple datasets.
 #' @param config List. The loaded main configuration object from
-#'   `check_and_prepare_data$config`.
+#'   `preprocess_data$config`.
 #' @param output_ablation_results_csv_path Character string. Full path to save the
 #'   ablation results as a *new* CSV file. If the file exists, it will be
 #'   overwritten. Directory created if needed.

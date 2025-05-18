@@ -36,7 +36,7 @@ characteristics will be used for the primary fitness evaluation by the
 internal \code{.calculate_fitness} function.}
 
 \item{config}{List. The loaded configuration object, typically from
-\code{check_and_prepare_data$config}. Must contain sections like
+\code{preprocess_data$config}. Must contain sections like
 \code{model_equations}, \code{power_params}, \code{preprocessing}, and \code{genetic_algorithm}.}
 
 \item{features}{Character vector. Names of columns in \code{dataset_data$data_suv_bi}

@@ -24,10 +24,10 @@ region_ablation(
 \item{var_composition}{Numeric. Parameter indicating how features are combined
 (e.g., 0 = volume-weighed, 1 = arithmetic mean). Passed to internal CVR calculation.}
 
-\item{prepared_data_list}{List. The output from \code{preprocess_datasets()},
+\item{prepared_data_list}{List. The output from \code{preprocess_data()},
 containing filtered data for multiple datasets.}
 
-\item{config}{List. The loaded main configuration object from \code{check_and_prepare_data$config}.
+\item{config}{List. The loaded main configuration object from \code{preprocess_data$config}.
 Must contain \code{preprocessing$id_column}, \code{model_equations$eq_group_string},
 and \code{power_params}.}
 
