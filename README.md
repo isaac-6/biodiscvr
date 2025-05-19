@@ -44,14 +44,18 @@ The best way to learn how to use the package is through the included
 vignette, which walks through the entire workflow step-by-step using
 your own data alongside the package’s default configuration files.
 
-After installing the package, you can access the vignette with:
+After installing the package with build_vignettes = TRUE, you can access
+the vignette with:
 
 ``` r
 # Load the package first if needed
 # library(biodiscvr)
 
-# View the main workflow vignette
+# Main workflow vignette
 vignette("biodiscvr", package = "biodiscvr")
+
+# Synthetic data example
+vignette("biodiscvr_synth", package = "biodiscvr")
 ```
 
 The vignette covers: \* Setting up your data directories and output

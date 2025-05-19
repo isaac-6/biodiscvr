@@ -183,6 +183,7 @@ preprocess_data <- function(loaded_data,
   }
   
   # --- Initial Input Validation ---
+  if (is.null(files_path)) {files_path <- system.file("files", package = "biodiscvr")}
   if (!is.list(loaded_data)) stop("Input 'loaded_data' must be a list.")
   if (!is.character(files_path) || length(files_path) != 1 || !dir.exists(files_path)) {
     stop("'files_path' must be a single string pointing to an existing directory.")
