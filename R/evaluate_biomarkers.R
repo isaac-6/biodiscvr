@@ -17,8 +17,9 @@
 #' @param datasets_to_evaluate Character vector. Names of the datasets within
 #'   `prepared_data_list` to evaluate the biomarkers on. Defaults to using all
 #'   datasets present in `prepared_data_list`.
-#' @param groups_to_evaluate Character vector. Groups ("CU", "CI") to evaluate
-#'   within each dataset. Defaults to `c("CU", "CI")`.
+#' @param groups_to_evaluate NULL or character vector. Groups ("CU", "CI") to evaluate
+#'   within each dataset. Defaults to `NULL`. 
+#'   When NULL, it takes the same group that was used in the given row.
 #' @param calculate_ci Logical. If `TRUE`, calculate and return bootstrap/estimated
 #'   95% confidence intervals using `.feval_group_95CI`. Defaults to `FALSE`.
 #' @param nsim Integer. Number of bootstrap simulations if `calculate_ci` is `TRUE`.
@@ -72,9 +73,9 @@ evaluate_biomarkers <- function(discovery_results_csv_path,
                                 prepared_data_list,
                                 config,
                                 datasets_to_evaluate = names(prepared_data_list),
-                                groups_to_evaluate = c("CU", "CI"),
+                                groups_to_evaluate = NULL, # Could force c("CU", "CI")
                                 calculate_ci = FALSE,
-                                nsim = 100,
+                                nsim = 1000,
                                 output_evaluation_csv_path = NULL,
                                 id_col = NULL, # Get from config later
                                 verbose = TRUE) {

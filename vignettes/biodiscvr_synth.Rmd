@@ -275,7 +275,8 @@ if (file.exists(results_full_path) && !is.null(preprocessed_data_list_synth) && 
     prepared_data_list = preprocessed_data_list_synth,
     config = config_from_preprocess,
     datasets_to_evaluate = datasets_for_final_evaluation, 
-    groups_to_evaluate = c("CU", "CI"),
+    groups_to_evaluate = NULL, # NULL takes the same group as the input row; 
+    # one could instead force a specific group/groups, like c("CU", "CI") 
     calculate_ci = FALSE,
     output_evaluation_csv_path = evaluation_results_csv,
     verbose = FALSE
