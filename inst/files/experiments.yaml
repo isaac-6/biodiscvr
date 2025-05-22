@@ -19,6 +19,12 @@ experiments:
   #   fixed_denominator_regs: ["whole_cerebellum"]
   #   run_second_iteration: TRUE # Trigger second iteration for this
 
+  FixedRef_InfCerebellum:
+    description: "Fix denominator to inferior cerebellum"
+    fixed_numerator_regs: NULL
+    fixed_denominator_regs: ["inferior_cerebgm"]
+    run_second_iteration: TRUE # Trigger second iteration for this
+
   FixedTarget_Metatemp:
     description: "Fix numerator to metatemporal"
     fixed_numerator_regs: ["entorhinal",
