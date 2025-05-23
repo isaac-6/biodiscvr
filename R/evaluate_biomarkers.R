@@ -73,7 +73,7 @@ evaluate_biomarkers <- function(discovery_results_csv_path,
                                 prepared_data_list,
                                 config,
                                 datasets_to_evaluate = names(prepared_data_list),
-                                groups_to_evaluate = NULL, # Could force c("CU", "CI")
+                                groups_to_evaluate = c("CU", "CI"),
                                 calculate_ci = FALSE,
                                 nsim = 1000,
                                 output_evaluation_csv_path = NULL,
@@ -86,7 +86,7 @@ evaluate_biomarkers <- function(discovery_results_csv_path,
     file.exists(discovery_results_csv_path),
     is.list(prepared_data_list), length(prepared_data_list) > 0,
     is.list(config),
-    is.character(datasets_to_evaluate), length(datasets_to_evaluate) > 0,
+    is.null(datasets_to_evaluate) || (is.character(datasets_to_evaluate) && length(datasets_to_evaluate) > 0),
     is.null(groups_to_evaluate) || (is.character(groups_to_evaluate) && all(groups_to_evaluate %in% c("CU", "CI"))),
     rlang::is_scalar_logical(calculate_ci),
     rlang::is_scalar_integerish(nsim), nsim > 1,
@@ -141,7 +141,7 @@ evaluate_biomarkers <- function(discovery_results_csv_path,
   
   # --- progress bar ---
   # Multicohort take as many time as the number of cohorts
-  total_iterations <- length(datasets_to_evaluate) * length(groups_to_evaluate) * nrow(discovery_results_df)
+  total_iterations <- max(1,length(datasets_to_evaluate)) * max(1, length(groups_to_evaluate)) * nrow(discovery_results_df)
   message(sprintf("Performing %d evaluations (%d datasets, %d groups, %d biomarkers).", total_iterations, length(datasets_to_evaluate), length(groups_to_evaluate), nrow(discovery_results_df)))
   pb <- progress_bar$new(
     format = "Progress [:bar] :percent (:current/:total) | ETA: :eta ",

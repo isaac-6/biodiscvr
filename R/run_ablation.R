@@ -66,8 +66,8 @@ run_ablation <- function(
     prepared_data_list,
     config,
     output_ablation_results_csv_path,
-    datasets_for_ablation_eval = names(prepared_data_list),
-    groups_for_ablation_eval = c("CU", "CI"),
+    datasets_for_ablation_eval = NULL,
+    groups_for_ablation_eval = NULL,
     features_for_ablation = NULL,
     verbose = TRUE) {
   
@@ -166,7 +166,7 @@ run_ablation <- function(
     }
     
     # cohorts/datasets to evaluate. If NULL, takes the one(s) used for discover from the data row.
-    if (is.null(groups_for_ablation_eval)) {
+    if (is.null(datasets_for_ablation_eval)) {
       if("evaluation_dataset" %in% names(biomarker_row)){
         # this is the csv from run_evaluation
         eval_dsets = strsplit(biomarker_row$evaluation_dataset, "\\|")[[1]]
