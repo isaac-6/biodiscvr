@@ -7,13 +7,13 @@ tags:
   - Alzheimer's disease
 authors:
   - name: Isaac Llorente-Saguer
-orcid: 0000-0002-7612-5331
-corresponding: false
-affiliation: 1
+    orcid: 0000-0002-7612-5331
+    corresponding: false
+    affiliation: 1
   - name: Neil Oxtoby
-orcid: 0000-0003-0203-3909
-corresponding: true
-affiliation: 1
+    orcid: 0000-0003-0203-3909
+    corresponding: true
+    affiliation: 1
 affiliations:
   - name: UCL Hawkes Institute and Department of Computer Science, University College London, United Kingdom
 index: 1
