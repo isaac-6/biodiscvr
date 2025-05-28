@@ -29,11 +29,11 @@ library(readr)
 
 This vignette demonstrates the end-to-end workflow for using the `biodiscvr` package. We will use a synthetic dataset included with the package to illustrate all major steps, from loading data to discovering and evaluating biomarkers.
 
-This allows you to run the entire pipeline and understand the inputs, outputs, and capabilities of `biodiscvr`.
+This allows running the entire pipeline and understand the inputs, outputs, and capabilities of `biodiscvr`.
 
 The workflow covers:
 
-1.  Setting up paths to the synthetic data and output locations.
+1.  Setting up paths to the (synthetic) data and output locations.
 2.  Loading the synthetic datasets using `load_datasets()`.
 3.  Checking data integrity, preparing SUV data, calculating time variables, and applying preprocessing filters using the consolidated `preprocess_data()` function.
 4.  Generating demographic summaries using `create_demographics_table()`.
@@ -47,7 +47,7 @@ The workflow covers:
 The `biodiscvr` package includes synthetic data in `inst/synthdata/` (cohort1, cohort2, cohort3) and example configuration files in `inst/files/` tailored for this synthetic data.
 Code is set to eval=FALSE. Change to TRUE or run it manually on a script.
 
-```{r define_paths_synth_vignette, eval=FALSE}
+```{r define_paths_synth_vignette, eval=TRUE}
 # --- Paths to Package-Internal Synthetic Data & Configs ---
 # These will be used by the functions.
 synth_data_root_dir <- system.file("synthdata", package = "biodiscvr", mustWork = TRUE)
@@ -87,8 +87,7 @@ run_tag_synth <- "SynthVignetteRun"
 # Define names of package-internal config/dict files for synthetic data
 pkg_synth_config_filename <- "config_synth.yaml"
 pkg_synth_dict_filename <- "dict_suv_synth.csv"
-pkg_synth_experiments_file <- system.file("files", "experiments_synth.yaml", package = "biodiscvr", mustWork = FALSE) # Not used in this vignette
-pkg_synth_literature_defs_file <- system.file("files", "literature_biomarkers_synth.yaml", package = "biodiscvr", mustWork = FALSE) # Not used in this vignette
+pkg_synth_experiments_file <- system.file("files", "experiments_synth.yaml", package = "biodiscvr", mustWork = TRUE) # Not used in this vignette
 
 # This global config_synth_for_vignette is primarily for functions that might need config
 # *outside* of preprocess_data, like setting up GA parameters for direct calls if needed.
@@ -105,7 +104,7 @@ config_synth_for_vignette <- yaml::read_yaml(full_path_global_synth_config)
 
 This single step combines loading, initial checks, SUV preparation (matching/renaming based on `dict_suv_synth.csv`), time variable calculation, and criteria-based filtering, all driven by `config_synth.yaml`. We will instruct `preprocess_data` to use the package-internal configuration files.
 
-```{r load_and_preprocess_synth_merged_v2, eval=FALSE}
+```{r load_and_preprocess_synth_merged_v2, eval=TRUE}
 # Load raw data
 loaded_data_raw_synth <- NULL
 if (dir.exists(synth_data_root_dir) && length(all_synth_datasets) > 0) {
@@ -142,7 +141,7 @@ if (!is.null(loaded_data_raw_synth)) {
 
 Generates summary tables for the synthetic cohorts that survived preprocessing.
 
-```{r demographics_synth_v3, eval=FALSE}
+```{r demographics_synth_v3, eval=TRUE}
 if (!is.null(preprocessed_data_list_synth) && !is.null(config_from_preprocess)) {
   if (!dir.exists(demographics_dir)) dir.create(demographics_dir, recursive = TRUE)
   
@@ -165,7 +164,7 @@ if (!is.null(preprocessed_data_list_synth) && !is.null(config_from_preprocess)) 
 
 Run `biodiscvr_single` on one synthetic cohort. GA parameters in `config_synth.yaml` should be set for a very quick run (e.g., low `popSize`, `maxiter`).
 
-```{r single_cohort_discovery_synth_v3, eval=FALSE}
+```{r single_cohort_discovery_synth_v3, eval=TRUE}
 single_cohort_result_df <- NULL
 target_dset_single <- datasets_for_single_discovery[1]
 
@@ -327,6 +326,39 @@ if (!is.null(multi_cohort_result_df) && nrow(multi_cohort_result_df) > 0 && !is.
 }
 ```
 
+## 7. Run multiple experiments, for multiple cohorts, independently and simultaneously (optional)
+The `run_experiments()` function can automate many of the single-cohort and multi-cohort discovery steps described above, based on an experiments definition file (e.g., `experiments_synth.yaml`).
+
+This is typically how you would run a larger batch of discovery variations. **This chunk is `eval=FALSE` due to its potential runtime.**
+
+```{r run_experiments_orchestration, eval=FALSE}
+# Ensure preprocessed_data_list_synth and config_from_preprocess are available
+# Ensure pkg_synth_experiments_file points to a valid experiments definition YAML
+
+if (!is.null(preprocessed_data_list_synth) && !is.null(config_from_preprocess)) {
+  # Define a new CSV for the orchestrated run_experiments output
+  orchestrated_results_csv <- "orchestrated_discovery_results.csv"
+  
+  run_experiments_output <- run_experiments(
+    prepared_data_list = preprocessed_data_list_synth,
+    config = config_from_preprocess,
+    groups = c("CU", "CI"),
+    features = NULL, # If NULL, all features are available for the algorithm
+    experiments_config_path = pkg_synth_experiments_file,
+    output_csv_name = orchestrated_results_csv,
+    output_dir = user_output_dir,
+    save_plots = FALSE, # plots of fitness vs generation for the search algorithm
+    datasets_to_run = datasets_for_multi_discovery, # Example: run on a subset
+    experiment_master_tag = paste0(run_tag_synth, "_Orchestrated"),
+    base_ga_seed = 42
+  )
+  message("Orchestrated experiments complete. Results in: ", orchestrated_results_csv)
+} else {
+  message("Skipping orchestrated run_experiments: Prerequisite data/config missing.")
+}
+```
+
+
 ## Conclusion & Output Files
 
 This vignette demonstrated a streamlined workflow using `biodiscvr`'s synthetic data. Key outputs generated in `r knitr::inline_expr('user_output_dir')` would include:
@@ -336,3 +368,6 @@ This vignette demonstrated a streamlined workflow using `biodiscvr`'s synthetic 
 3.  **Evaluation of Multi-Cohort Biomarker:** `r knitr::inline_expr('basename(evaluation_results_csv)')`
 4.  **Demographics Tables:** In `r knitr::inline_expr('basename(demographics_dir)')`
 5.  **Logs & Plots:** In `r knitr::inline_expr('basename(log_dir_synth)')` and `r knitr::inline_expr('basename(user_output_dir)')`.
+6.  **Orchestrated Experiment Results:** (e.g., `orchestrated_discovery_results.csv`) if Step 7 is run manually.
+
+Remember to replace `tempdir()` with your actual project directory for persistent storage of results. Consult individual function help (`?function_name`) for more details.
