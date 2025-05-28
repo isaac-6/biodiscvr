@@ -8,6 +8,10 @@ tags:
 authors:
   - name: Isaac Llorente-Saguer
 orcid: 0000-0002-7612-5331
+corresponding: false # (This is how to denote the corresponding author)
+affiliation: 1 # (Multiple affiliations must be quoted)
+  - name: Neil Oxtoby
+orcid: 0000-0003-0203-3909
 corresponding: true # (This is how to denote the corresponding author)
 affiliation: 1 # (Multiple affiliations must be quoted)
 affiliations:
@@ -80,7 +84,7 @@ This package builds upon the methodologies described in @llorente:2024.
   
 # Acknowledgements
 
-Thank you David Pérez Suárez for testing the package and providing feedback!
+Thank you, David Pérez Suárez, for testing the package and providing feedback.
 We acknowledge funding from a UKRI Future Leaders Fellowship (MR/S03546X/1, MR/X024288/1).
   
 # References
