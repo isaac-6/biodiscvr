@@ -1,5 +1,5 @@
 ---
-  title: 'biodiscvr: Biomarker Discovery Using Composite Value Ratios'
+title: 'biodiscvr: Biomarker Discovery Using Composite Value Ratios'
 tags:
   - R
   - biomarkers
@@ -7,13 +7,13 @@ tags:
   - Alzheimer's disease
 authors:
   - name: Isaac Llorente-Saguer
-orcid: 0000-0002-7612-5331
-corresponding: false # (This is how to denote the corresponding author)
-affiliation: 1 # (Multiple affiliations must be quoted)
+    orcid: 0000-0002-7612-5331
+    corresponding: false
+    affiliation: 1
   - name: Neil Oxtoby
-orcid: 0000-0003-0203-3909
-corresponding: true # (This is how to denote the corresponding author)
-affiliation: 1 # (Multiple affiliations must be quoted)
+    orcid: 0000-0003-0203-3909
+    corresponding: true
+    affiliation: 1
 affiliations:
   - name: UCL Hawkes Institute and Department of Computer Science, University College London, United Kingdom
 index: 1
@@ -24,7 +24,7 @@ bibliography: paper.bib
   
 # Summary
   
-**biodiscvr** provides a framework for discovering and evaluating novel or 
+**biodiscvr** provides a framework for discovering and evaluating 
 optimised biomarkers defined as ratios of composite values derived from 
 feature sets (e.g., regional measurements from imaging data). 
 It was originally developed to analyse longitudinal single- and multi-cohort datasets.
@@ -71,10 +71,10 @@ a vector of ones (equal cohort weight).
 
 The metrics are described in @llorente:2024. A linear mixed-effects model is fit 
 to the log-transformed biomarker, and then the following metrics are assessed:
-- Sample size estimate for a hypothetical clinical trial, with their parameters 
+  - Sample size estimate for a hypothetical clinical trial, with their parameters 
     stated in the config.yaml file
-- Group separation: it is the t-statistic of the fixed effects of being amyloid-positive
-- Percentage error: standard deviation of the model residuals, as a proxy for 
+  - Group separation: it is the t-statistic of the fixed effects of being amyloid-positive
+  - Percentage error: standard deviation of the model residuals, as a proxy for 
     the coefficient of variation of the biomarker in its native space. 
 
     
