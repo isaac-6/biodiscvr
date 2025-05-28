@@ -9,8 +9,8 @@ run_ablation(
   prepared_data_list,
   config,
   output_ablation_results_csv_path,
-  datasets_for_ablation_eval = names(prepared_data_list),
-  groups_for_ablation_eval = c("CU", "CI"),
+  datasets_for_ablation_eval = NULL,
+  groups_for_ablation_eval = NULL,
   features_for_ablation = NULL,
   verbose = TRUE
 )
