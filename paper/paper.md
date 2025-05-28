@@ -1,5 +1,5 @@
 ---
-  title: 'biodiscvr: Biomarker Discovery Using Composite Value Ratios'
+title: 'biodiscvr: Biomarker Discovery Using Composite Value Ratios'
 tags:
   - R
   - biomarkers
