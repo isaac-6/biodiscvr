@@ -8,12 +8,12 @@ tags:
 authors:
   - name: Isaac Llorente-Saguer
 orcid: 0000-0002-7612-5331
-corresponding: false # (This is how to denote the corresponding author)
-affiliation: 1 # (Multiple affiliations must be quoted)
+corresponding: false
+affiliation: 1
   - name: Neil Oxtoby
 orcid: 0000-0003-0203-3909
-corresponding: true # (This is how to denote the corresponding author)
-affiliation: 1 # (Multiple affiliations must be quoted)
+corresponding: true
+affiliation: 1
 affiliations:
   - name: UCL Hawkes Institute and Department of Computer Science, University College London, United Kingdom
 index: 1
