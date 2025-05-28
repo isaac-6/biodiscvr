@@ -1,0 +1,21 @@
+experiments:
+  FullCVR: # Experiment name
+    description: "Standard CVR discovery, no fixed regions"
+    fixed_numerator_regs: NULL
+    fixed_denominator_regs: NULL
+    run_second_iteration: FALSE # Not applicable
+
+  FixedRef_Feature02_03:
+    description: "Fix denominator to one or more preselected features"
+    fixed_numerator_regs: NULL
+    fixed_denominator_regs: ["Feature02", "Feature03"]
+    run_second_iteration: TRUE # Trigger second iteration for this
+
+  FixedTarget_Feature13_15:
+    description: "Fix numerator to one or more preselected features"
+    fixed_numerator_regs: ["Feature13",
+         "Feature15"]
+    fixed_denominator_regs: NULL
+    run_second_iteration: TRUE # Trigger second iteration for this
+
+  # Add more predefined fixed experiments here...
