@@ -24,7 +24,7 @@ bibliography: paper.bib
   
 # Summary
   
-**biodiscvr** provides a framework for discovering and evaluating novel or 
+**biodiscvr** provides a framework for discovering and evaluating 
 optimised biomarkers defined as ratios of composite values derived from 
 feature sets (e.g., regional measurements from imaging data). 
 It was originally developed to analyse longitudinal single- and multi-cohort datasets.
