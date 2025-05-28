@@ -14,8 +14,7 @@ preprocessing:
   min_entries_per_id: 2
   id_column: "RID" # Column defining unique individuals
   criteria_source_file: "data"
-  ignore_columns: ["idx", "inf_lat_vent", "lateral_ventricle", "choroid_plexus", 
-  "cerebral_white_matter", "hippocampus",
+  ignore_columns: ["idx", "inf_lat_vent", "lateral_ventricle", "choroid_plexus", "hemiwm", "hippocampus",
 "pallidum", "putamen", "caudate",
 "WM_HYPOINTENSITIES", "CSF", "ICV", "wholebrain",
 "inferior_cerebgm",

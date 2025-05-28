@@ -93,7 +93,7 @@ biomarkers: # Top-level key
          "inferiortemporal",
          "fusiform",
          "middletemporal"]
-    denominator_regions: ["composite"]
+    denominator_regions: ["brainstem", "whole_cerebellum", "cerebral_white_matter"]
     var_composition: 0
 
 
@@ -104,10 +104,7 @@ biomarkers: # Top-level key
   #   name: "Mattsson_CorticalMean_CerebGM"
   #   description: "Mean of specific cortical regions / Cerebellar Gray Matter (Mattsson et al., 2016)"
   #   source_citation: "Mattsson et al., Sci Transl Med 2016, doi:10.1126/scitranslmed.aaf2362"
-  #   numerator_regions: [
-  #     "Precuneus", "PosteriorCingulate", "InferiorParietal", "LateralTemporal",
-  #     "MedialOrbitofrontal", "LateralOrbitofrontal", "AnteriorCingulate", "FrontalPole"
-  #   ] # *** ADAPT THESE CORTICAL REGIONS ***
+  #   numerator_regions: [*all*]
   #   denominator_regions: ["cerebellum_cortex"] 
   #   var_composition: 1
 
@@ -116,12 +113,12 @@ biomarkers: # Top-level key
   Kotari_EarlyTau_CompositeRef:
     name: "Kotari_EarlyTau_CompositeRef"
     description: "Meta-Temporal Composite / Custom Composite Reference (Schwarz et al.)"
-    source_citation: "Kotari et al., NeuroImage 2021, doi.org/10.1016/j.neuroimage.2021.118259"
+    source_citation: "Kotari et al., AR&T 2023, https://link.springer.com/article/10.1186/s13195-023-01160-6"
     numerator_regions: ["entorhinal",
          "parahippocampal",
          "inferiortemporal",
          "fusiform"]
-    denominator_regions: ["hemiwm"]
+    denominator_regions: ["cerebral_white_matter"]
     var_composition: 0
 
 
@@ -144,18 +141,18 @@ biomarkers: # Top-level key
 
 
   # --- Based on Llorente-Saguer et al. (Brain Comms 2024)
-  Llorente_CVR_CI_m_b:
-    name: "BrainComms_CVR_CImB"
-    description: "Brain Comms CVR_CI mean, bilateral"
-    source_citation: "Llorente-Saguer et al., Brain Comms 2024, doi.org/10.1093/braincomms/fcae438"
-    numerator_regions: ["entorhinal", "inferiortemporal", "insula", "medialorbitofrontal", "paracentral", "precuneus", "superiorfrontal", "temporalpole", "transversetemporal", "amygdala"] 
-    denominator_regions: ["brainstem", "hemiwm", "cc_anterior", "cc_mid_anterior", "caudalanteriorcingulate", "postcentral", "rostralanteriorcingulate", "ventraldc"] 
-    var_composition: 1
+  # Llorente_CVR_CI_m_b:
+  #   name: "BrainComms_CVR_CImB"
+  #   description: "Brain Comms CVR_CI mean, bilateral"
+  #   source_citation: "Llorente-Saguer et al., Brain Comms 2024, doi.org/10.1093/braincomms/fcae438"
+  #   numerator_regions: ["entorhinal", "inferiortemporal", "insula", "medialorbitofrontal", "paracentral", "precuneus", "superiorfrontal", "temporalpole", "transversetemporal", "amygdala"] 
+  #   denominator_regions: ["brainstem", "hemiwm", "cc_anterior", "cc_mid_anterior", "caudalanteriorcingulate", "postcentral", "rostralanteriorcingulate", "ventraldc"] 
+  #   var_composition: 1
 
-  Llorente_CVR_CU_m_b:
-    name: "BrainComms_CVR_CUmB"
-    description: "Brain Comms CVR_CU mean, bilateral"
-    source_citation: "Llorente-Saguer et al., Brain Comms 2024, doi.org/10.1093/braincomms/fcae438"
-    numerator_regions: ["caudalmiddlefrontal", "entorhinal", "frontalpole", "isthmuscingulate", "lateralorbitofrontal", "pericalcarine", "precuneus", "superiorfrontal", "superiortemporal", "transversetemporal", "amygdala"] 
-    denominator_regions: ["brainstem", "hemiwm", "cc_posterior", "caudalanteriorcingulate", "cuneus", "insula", "rostralanteriorcingulate", "superiorparietal"] 
-    var_composition: 1
+  # Llorente_CVR_CU_m_b:
+  #   name: "BrainComms_CVR_CUmB"
+  #   description: "Brain Comms CVR_CU mean, bilateral"
+  #   source_citation: "Llorente-Saguer et al., Brain Comms 2024, doi.org/10.1093/braincomms/fcae438"
+  #   numerator_regions: ["caudalmiddlefrontal", "entorhinal", "frontalpole", "isthmuscingulate", "lateralorbitofrontal", "pericalcarine", "precuneus", "superiorfrontal", "superiortemporal", "transversetemporal", "amygdala"] 
+  #   denominator_regions: ["brainstem", "hemiwm", "cc_posterior", "caudalanteriorcingulate", "cuneus", "insula", "rostralanteriorcingulate", "superiorparietal"] 
+  #   var_composition: 1

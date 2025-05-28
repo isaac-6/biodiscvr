@@ -17,8 +17,9 @@
 #' @param datasets_to_evaluate Character vector. Names of the datasets within
 #'   `prepared_data_list` to evaluate the biomarkers on. Defaults to using all
 #'   datasets present in `prepared_data_list`.
-#' @param groups_to_evaluate Character vector. Groups ("CU", "CI") to evaluate
-#'   within each dataset. Defaults to `c("CU", "CI")`.
+#' @param groups_to_evaluate NULL or character vector. Groups ("CU", "CI") to evaluate
+#'   within each dataset. Defaults to `NULL`. 
+#'   When NULL, it takes the same group that was used in the given row.
 #' @param calculate_ci Logical. If `TRUE`, calculate and return bootstrap/estimated
 #'   95% confidence intervals using `.feval_group_95CI`. Defaults to `FALSE`.
 #' @param nsim Integer. Number of bootstrap simulations if `calculate_ci` is `TRUE`.
@@ -74,7 +75,7 @@ evaluate_biomarkers <- function(discovery_results_csv_path,
                                 datasets_to_evaluate = names(prepared_data_list),
                                 groups_to_evaluate = c("CU", "CI"),
                                 calculate_ci = FALSE,
-                                nsim = 100,
+                                nsim = 1000,
                                 output_evaluation_csv_path = NULL,
                                 id_col = NULL, # Get from config later
                                 verbose = TRUE) {
@@ -85,8 +86,8 @@ evaluate_biomarkers <- function(discovery_results_csv_path,
     file.exists(discovery_results_csv_path),
     is.list(prepared_data_list), length(prepared_data_list) > 0,
     is.list(config),
-    is.character(datasets_to_evaluate), length(datasets_to_evaluate) > 0,
-    is.character(groups_to_evaluate), all(groups_to_evaluate %in% c("CU", "CI")),
+    is.null(datasets_to_evaluate) || (is.character(datasets_to_evaluate) && length(datasets_to_evaluate) > 0),
+    is.null(groups_to_evaluate) || (is.character(groups_to_evaluate) && all(groups_to_evaluate %in% c("CU", "CI"))),
     rlang::is_scalar_logical(calculate_ci),
     rlang::is_scalar_integerish(nsim), nsim > 1,
     is.null(output_evaluation_csv_path) || rlang::is_scalar_character(output_evaluation_csv_path),
@@ -140,7 +141,7 @@ evaluate_biomarkers <- function(discovery_results_csv_path,
   
   # --- progress bar ---
   # Multicohort take as many time as the number of cohorts
-  total_iterations <- length(datasets_to_evaluate) * length(groups_to_evaluate) * nrow(discovery_results_df)
+  total_iterations <- max(1,length(datasets_to_evaluate)) * max(1, length(groups_to_evaluate)) * nrow(discovery_results_df)
   message(sprintf("Performing %d evaluations (%d datasets, %d groups, %d biomarkers).", total_iterations, length(datasets_to_evaluate), length(groups_to_evaluate), nrow(discovery_results_df)))
   pb <- progress_bar$new(
     format = "Progress [:bar] :percent (:current/:total) | ETA: :eta ",

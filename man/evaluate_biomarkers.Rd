@@ -11,7 +11,7 @@ evaluate_biomarkers(
   datasets_to_evaluate = names(prepared_data_list),
   groups_to_evaluate = c("CU", "CI"),
   calculate_ci = FALSE,
-  nsim = 100,
+  nsim = 1000,
   output_evaluation_csv_path = NULL,
   id_col = NULL,
   verbose = TRUE
@@ -34,8 +34,9 @@ containing filtered data for multiple datasets (e.g., \code{list(ADNI=list(data=
 \code{prepared_data_list} to evaluate the biomarkers on. Defaults to using all
 datasets present in \code{prepared_data_list}.}
 
-\item{groups_to_evaluate}{Character vector. Groups ("CU", "CI") to evaluate
-within each dataset. Defaults to \code{c("CU", "CI")}.}
+\item{groups_to_evaluate}{NULL or character vector. Groups ("CU", "CI") to evaluate
+within each dataset. Defaults to \code{NULL}.
+When NULL, it takes the same group that was used in the given row.}
 
 \item{calculate_ci}{Logical. If \code{TRUE}, calculate and return bootstrap/estimated
 95\% confidence intervals using \code{.feval_group_95CI}. Defaults to \code{FALSE}.}
