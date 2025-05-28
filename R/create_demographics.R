@@ -116,11 +116,11 @@ create_demographics_table <- function(processed_dataset_list,
       results$"Amyloid Positive (%)" <- "NA"
       results$"N Sites" <- "NA"
     } else {
-      # sex (assuming codes 1 and 2)
+      # sex
       if ("sex" %in% available_cols) {
-        sex_table <- table(factor(group_data$sex, levels=c(1, 2))) # Ensure both levels present
-        results$"sex (1 | 2)" <- .format_categorical(sex_table, nrow(group_data))
-      } else { results$"sex (1 | 2)" <- "NA" }
+        sex_table <- table(factor(group_data$sex)) # Ensure both levels present
+        results$"sex" <- .format_categorical(sex_table, nrow(group_data))
+      } else { results$"sex" <- "NA" }
       
       # Age at Baseline (Use unique per ID if multiple rows per ID exist)
       if ("AGE" %in% available_cols && id_col %in% available_cols) {
