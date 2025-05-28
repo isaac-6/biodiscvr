@@ -71,10 +71,10 @@ a vector of ones (equal cohort weight).
 
 The metrics are described in @llorente:2024. A linear mixed-effects model is fit 
 to the log-transformed biomarker, and then the following metrics are assessed:
-- Sample size estimate for a hypothetical clinical trial, with their parameters 
+  - Sample size estimate for a hypothetical clinical trial, with their parameters 
     stated in the config.yaml file
-- Group separation: it is the t-statistic of the fixed effects of being amyloid-positive
-- Percentage error: standard deviation of the model residuals, as a proxy for 
+  - Group separation: it is the t-statistic of the fixed effects of being amyloid-positive
+  - Percentage error: standard deviation of the model residuals, as a proxy for 
     the coefficient of variation of the biomarker in its native space. 
 
     
