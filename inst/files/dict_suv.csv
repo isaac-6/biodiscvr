@@ -1,6 +1,6 @@
 ﻿full_regs,target,MAYO,NACC
 brainstem,brainstem,Pons,
-hemiwm,hemiwm,,
+hemiwm,,,
 cc_anterior,,,
 cc_central,,,
 cc_mid_anterior,,,
@@ -47,7 +47,7 @@ amygdala,amygdala,Amygdala_L,
 caudate,caudate,Caudate_L,
 cerebellum_cortex,,Cerebellum_6_L,CEREGR
 cerebellum_white_matter,,,CEREWH
-cerebral_white_matter,,,WHITEVOL
+cerebral_white_matter,cerebral_white_matter,,WHITEVOL
 choroid_plexus,,,
 hippocampus,,Hippocampus_L,LHIPPO
 inf_lat_vent,,,
