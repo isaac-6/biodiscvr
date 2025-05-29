@@ -33,7 +33,7 @@ You can install the development version of `biodiscvr` from [GitHub](https://git
 
 ```r
 if (!require("remotes")) install.packages("remotes")
-remotes::install_github("isaac-6/biodiscvr", dependencies = TRUE, build_vignettes = FALSE)
+remotes::install_github("isaac-6/biodiscvr", ref = "project1", dependencies = TRUE, build_vignettes = TRUE)
 ```
 
 **Note:** You may need Rtools (Windows) or Xcode Command Line Tools (macOS) installed. The installation will also attempt to install required packages listed under `Imports` (like `yaml`, `readr`, `dplyr`, `lme4`, `longpower`, `GA`, `rlang`).

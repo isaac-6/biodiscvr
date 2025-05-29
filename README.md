@@ -30,7 +30,7 @@ vignettes, with:
 
 ``` r
 if (!require("remotes")) install.packages("remotes")
-remotes::install_github("isaac-6/biodiscvr", dependencies = TRUE, build_vignettes = FALSE)
+remotes::install_github("isaac-6/biodiscvr", ref = "project1", dependencies = TRUE, build_vignettes = TRUE)
 ```
 
 **Note:** You may need Rtools (Windows) or Xcode Command Line Tools
