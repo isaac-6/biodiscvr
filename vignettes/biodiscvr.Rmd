@@ -38,13 +38,15 @@ We will cover the following steps:
 
 Before running the workflow, ensure you have the following files prepared and know their locations:
 
-1.  **Root Data Directory:** The main folder containing subdirectories for each dataset (e.g., "ADNI", "OASIS"). Each subdirectory should contain at least `data.csv` and `data_suv_bi.csv`.
+1.  **Root Data Directory:** The main folder containing subdirectories for each dataset (e.g., "ADNI", "OASIS"). Each subdirectory should contain at least `data.csv` and `data_suv_bi.csv`. The file `data_vol_bi` will be used for volume-weighted combinations from the literature.
+
+The following are provided by the package, for this project1.
 2.  **Configuration File (`config.yaml`):** Contains parameters for preprocessing (including `date_column` for time calculation, inclusion criteria), model equations, power calculations, and GA settings.
 3.  **SUV Dictionary (`dict_suv.csv`):** Defines SUV region names for matching/renaming.
 4.  **Experiments File (`experiments.yaml`):** Defines the sequence of discovery runs.
 5.  **Literature Biomarkers File (`literature_biomarkers.yaml`):** Defines standard biomarkers for comparison.
 
-You will also need to decide on output locations:
+You will need to decide on output locations:
 
 6.  **Output Directory:** A folder where results (CSV files, plots) will be saved.
 7.  **Log Directory (Optional):** A folder to store detailed log files from `preprocess_data`.
@@ -55,7 +57,7 @@ This workflow can utilize default configuration files included with the `biodisc
 *   `config.yaml`: Default configuration.
 *   `dict_suv.csv`: Default SUV dictionary.
 *   `experiments.yaml`: Default set of discovery experiments.
-*   `literature_biomarkers.yaml`: (To be created) Default set of literature biomarkers.
+*   `literature_biomarkers.yaml`: Default set of literature biomarkers.
 
 You can inspect these default files using `system.file("files", "<filename>", package = "biodiscvr")`. If you need to customize them, copy them from the package installation directory to your own project space and provide the path to your custom file instead of using the package default in the function calls below.
 
@@ -72,15 +74,15 @@ user_data_root_dir <- "path/to/your/data_root_folder" # <<< REPLACE
 #    If using package defaults for config/dict, this can be NULL or point to where
 #    check_and_prepare_data (now part of preprocess_data) expects them.
 #    For preprocess_data, it will use system.file if files_path is not given for config/dict.
-user_supporting_files_dir <- "path/to/your/supporting_files" # <<< REPLACE IF USING CUSTOM CONFIG/DICT
+user_supporting_files_dir <- NULL # <<< REPLACE IF USING CUSTOM CONFIG/DICT
                                                           # OR set to NULL to use package defaults
 
 # 3. Path to your CUSTOM experiments definition file (if not using package default)
-user_experiments_file <- "path/to/your/experiments.yaml" # <<< REPLACE IF CUSTOM
+user_experiments_file <- system.file("files", "experiments.yaml", package = "biodiscvr") # <<< REPLACE IF CUSTOM
 #    To use package default: system.file("files", "experiments.yaml", package = "biodiscvr")
 
 # 4. Path to your CUSTOM literature biomarker definition file (if not using package default)
-user_literature_defs_file <- "path/to/your/literature_biomarkers.yaml" # <<< REPLACE IF CUSTOM
+user_literature_defs_file <- system.file("files", "literature_biomarkers.yaml", package = "biodiscvr") # <<< REPLACE IF CUSTOM
 #    To use package default: system.file("files", "literature_biomarkers.yaml", package = "biodiscvr")
 
 
@@ -89,7 +91,7 @@ user_output_dir <- "path/to/your/output_folder" # <<< REPLACE
 if (!dir.exists(user_output_dir)) dir.create(user_output_dir, recursive = TRUE)
 
 # 6. Path to the desired directory for detailed logs (optional, set to NULL to disable)
-user_log_dir <- file.path(user_output_dir, "logs")
+user_log_dir <- file.path(user_output_dir, ".log")
 
 # 7. Define desired output CSV filenames
 main_results_csv <- "discovery_evaluation_results.csv"
@@ -133,9 +135,9 @@ loaded_data_raw <- load_datasets(root_path = user_data_root_dir)
 
 ## Step 2: Preprocessing Data (Checks, Preparation, Filtering)
 
-This single function now handles:
+This function handles:
 *   Validating loaded data against configuration and dictionary.
-*   Calculating the `time` variable from a date column (e.g., `ScanDate`).
+*   Calculating the `time` variable from a date column (e.g., `ScanDate` or `years.from.baseline`).
 *   Performing SUV column matching and renaming/subsetting.
 *   Applying filtering based on minimum entries and group-specific inclusion criteria.
 *   Sets up logging.
@@ -237,7 +239,7 @@ experiment_results_info <- run_experiments(
   experiments_config_path = experiments_file_to_use,
   output_csv_name = main_results_csv,
   output_dir = file.path(user_output_dir),
-  save_plots = TRUE,
+  save_plots = FALSE,
   datasets_to_run = names(preprocessed_data_list),
   experiment_master_tag = run_tag,
   base_ga_seed = 42
@@ -248,51 +250,117 @@ message("Experiment runs complete. Main results appended to: ", main_results_csv
 
 *Expected Output:* `main_results_csv` populated. Plots saved.
 
-## Step 5: Evaluating Literature Biomarkers
+## Step 5: Evaluating Discovered Biomarkers
+
+After running experiments, you will have a CSV file (`main_results_csv`) containing various discovered biomarkers (e.g., from baseline runs, fixed region runs, multi-cohort runs). This step uses the `evaluate_biomarkers` function to take one or more of these discovered biomarkers (identified by their `regs_numerator` and `regs_denominator` from the CSV) and evaluate their performance (Rep, SepAB, SSE) across all your preprocessed datasets and for both CU and CI groups.
+
+**Note:** This chunk is set to `eval=FALSE`. You'll need to ensure `main_results_csv` exists from Step 4.
+
+```{r evaluate_discovered_user, eval=FALSE}
+# Ensure main_results_csv, preprocessed_data_list, and config_loaded are available
+main_results_csv_path <- file.path(user_output_dir, main_results_csv)
+
+# Define path for the evaluation output
+evaluation_output_csv <- file.path(user_output_dir, "biomarker_evaluations.csv")
+
+if (file.exists(main_results_csv_path)) {
+  message("Evaluating discovered biomarkers from: ", main_results_csv)
+  
+  # For this example, we assume evaluate_biomarkers will process the whole file.
+
+  evaluated_biomarkers_df <- evaluate_biomarkers(
+    discovery_results_csv_path = main_results_csv_path,
+    prepared_data_list = preprocessed_data_list,
+    config = config_loaded,
+    datasets_to_evaluate = names(preprocessed_data_list), # Evaluate on all datasets
+    groups_to_evaluate = c("CU", "CI"), # Evaluate for both groups
+    calculate_ci = TRUE, # Set to TRUE for 95% CIs (slower)
+    nsim = 2000, # If calculate_ci = TRUE
+    output_evaluation_csv_path = evaluation_output_csv,
+    verbose = TRUE
+  )
+  
+  if(!is.null(evaluated_biomarkers_df) && nrow(evaluated_biomarkers_df) > 0){
+    message("Evaluation of discovered biomarkers complete. Results saved to: ", evaluation_output_csv)
+    # print(head(evaluated_biomarkers_df))
+  } else {
+    message("Evaluation of discovered biomarkers did not produce results or the input CSV was empty/problematic.")
+  }
+} else {
+  message("Skipping evaluation of discovered biomarkers: Main results CSV '", 
+          basename(main_results_csv), "' not found.")
+  message("Ensure the 'Running Discovery Experiments' step (Step 4) ran successfully and created the CSV.")
+}
+```
+
+*Expected Output (when run manually):* A new CSV file (`final_biomarker_evaluations.csv`) containing detailed Rep, SepAB, and SSE metrics for each selected discovered biomarker, evaluated on each specified dataset and group.
+
+## 6. Iterative Regional Ablation
+
+Perform ablation on the best biomarker found from the evaluation file or experiments run.
+This code finds a better-performing subset of regions from the provided biomarkers, if it exists.
+
+```{r run_ablation_synth_v3, eval=FALSE}
+# Define path for the evaluation output
+ablation_output_csv <- file.path(user_output_dir, "biomarker_ablation.csv")
+
+if (!is.null(evaluation_output_csv)) {
+  message("Performing iterative ablation on the discovered biomarkers...")
+
+    run_ablation(
+        discovered_biomarkers_csv_path = evaluation_output_csv,
+        prepared_data_list = preprocessed_data_list,
+        config = config_loaded,
+        output_ablation_results_csv_path = ablation_output_csv,
+        datasets_for_ablation_eval = NULL, # NULL uses the same dataset as the row in the file
+        groups_for_ablation_eval = NULL, # NULL uses the same group as the row in the file
+        features_for_ablation = NULL, # NULL uses available biomarker features.
+        verbose = TRUE) 
+    
+    message("Ablation study complete.")
+} else {
+  message("Skipping ablation study: No multi-cohort biomarker result available or config missing.")
+}
+```
+
+
+## Step 7: Evaluating Literature Biomarkers
 
 Evaluates biomarkers from your `literature_biomarkers.yaml` (custom or package default).
 
 ```{r eval_literature, eval=FALSE}
-# Determine which literature definitions file to use
-literature_file_to_use <- if (!is.null(user_literature_defs_file) && file.exists(user_literature_defs_file)) {
-  user_literature_defs_file
-} else {
-  message("User literature biomarker file not found or not specified, using package default.")
-  pkg_literature_defs_file # Defined in setup chunk
-}
 if (!file.exists(literature_file_to_use)) {
   warning("Literature biomarker file not found. Skipping evaluation.", immediate.=TRUE)
 } else {
-  literature_defs_yaml <- yaml::read_yaml(literature_file_to_use)
-  literature_defs_list <- literature_defs_yaml$biomarkers
-
-  literature_evaluation_df <- evaluate_literature_biomarkers(
-    literature_defs = literature_defs_list,
-    prepared_data_list = preprocessed_data_list,
-    config = config_loaded,
-    datasets_to_evaluate = names(preprocessed_data_list),
-    groups_to_evaluate = c("CU", "CI"),
-    calculate_ci = FALSE,
-    output_evaluation_csv_path = literature_results_csv,
-    verbose = TRUE
-  )
+  evaluate_literature_biomarkers(lit_biomarker_file_path = literature_file_to_use,
+                               prepared_data_list = preprocessed_data_list,
+                               config = config_loaded,
+                               datasets_to_evaluate = names(preprocessed_data_list),
+                               groups_to_evaluate = c("CU", "CI"),
+                               calculate_ci = TRUE,
+                               nsim = 2000,
+                               output_csv_path = literature_results_csv,
+                               id_col = NULL, # NULL considers "RID" as the unique individual identifier
+                               verbose = TRUE) 
+  
   # print(head(literature_evaluation_df))
 }
 ```
 
 *Expected Output:* `literature_results_csv` populated.
 
+
 ## Reporting Output Files
 
 After running the workflow, the key output files generated in your `user_output_dir` will be:
 
 1.  **Main Discovery & Evaluation Results:**
-    *   Path: `main_results_csv`
-    *   Content: Results from `run_experiments`.
+    *   Path: `user_output_dir`
+    *   Content: Results from `run_experiments`, `evaluate_biomarkers` and `run_ablation``.
 
 2.  **Literature Biomarker Evaluation Results:**
-    *   Path: `literature_results_csv`
-    *   Content: Performance metrics for standard biomarkers.
+    *   Path: `user_output_dir`
+    *   Content: Performance metrics for literature biomarkers.
 
 3.  **Demographics Tables:**
     *   Path: Inside the `demographics_dir`
