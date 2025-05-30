@@ -69,7 +69,7 @@ towards the desired equilibrium. This reference direction can be (ideally) the s
 (which the framework can evaluate), or when none is provided, it defaults to 
 a vector of ones (equal cohort weight).
 
-The metrics are described in @llorente:2024. A linear mixed-effects model is fit 
+The metrics are described in `@llorente:2024`. A linear mixed-effects model is fit 
 to the log-transformed biomarker, and then the following metrics are assessed:
   - Sample size estimate for a hypothetical clinical trial, with their parameters 
     stated in the config.yaml file
@@ -80,7 +80,7 @@ to the log-transformed biomarker, and then the following metrics are assessed:
     
 # Citations
     
-This package builds upon the methodologies described in @llorente:2024. 
+This package builds upon the methodologies described in `@llorente:2024`. 
   
 # Acknowledgements
 
