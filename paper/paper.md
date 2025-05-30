@@ -16,8 +16,8 @@ authors:
     affiliation: 1
 affiliations:
   - name: UCL Hawkes Institute and Department of Computer Science, University College London, United Kingdom
-index: 1
-ror: 02jx3x895
+    index: 1
+    ror: 02jx3x895
 date: 20 May 2025
 bibliography: paper.bib
 ---
