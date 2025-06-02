@@ -8,6 +8,7 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 [![License: GPL
 v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![R-CMD-check](https://github.com/isaac-6/biodiscvr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/isaac-6/biodiscvr/actions/workflows/R-CMD-check.yaml)
+[![status](https://joss.theoj.org/papers/f143631ed4b6459a399248867b0da166/status.svg)](https://joss.theoj.org/papers/f143631ed4b6459a399248867b0da166)
 <!-- badges: end -->
 
 ## Overview
@@ -30,7 +31,7 @@ vignettes, with:
 
 ``` r
 if (!require("remotes")) install.packages("remotes")
-remotes::install_github("isaac-6/biodiscvr", dependencies = TRUE, build_vignettes = FALSE)
+remotes::install_github("isaac-6/biodiscvr", ref = "paper",  dependencies = TRUE, build_vignettes = TRUE)
 ```
 
 **Note:** You may need Rtools (Windows) or Xcode Command Line Tools
