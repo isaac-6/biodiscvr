@@ -593,6 +593,8 @@ preprocess_data <- function(loaded_data,
           }
         }
         
+        
+        
         # --- Final Check and Processing ---
         if (!time_added_or_found || is.null(calculated_time_vector)) {
           # Stop if neither source column was found or usable
@@ -629,6 +631,107 @@ preprocess_data <- function(loaded_data,
         
         # Optional: Stop processing dataset if time calculation failed and time is essential?
         if (!time_calc_success) { stop("time variable creation failed.") }
+        
+        
+        
+        
+        
+        # --- Step X: Impute/Assign AB and DX per Individual (if configured) ---
+        # This step modifies the crit_df (and data_processed[[...]][[crit_source_file]])
+        # It uses the 'time' column if 'baseline' method is chosen.
+        
+        impute_ab_method <- preproc_params$impute_ab_method %||% "asis" # Default to no change
+        impute_dx_method <- preproc_params$impute_dx_method %||% "asis" # Default to no change
+        
+        # --- AB Imputation ---
+        if (impute_ab_method != "asis" && "AB" %in% names(crit_df) && id_col %in% names(crit_df)) {
+          if(verbose) message(sprintf("  - Assigning individual-level AB status using method: '%s'", impute_ab_method))
+          
+          # Ensure 'time' column exists if 'baseline' method is used
+          time_col_for_baseline <- config$preprocessing$time_output_column %||% "time"
+          if (impute_ab_method == "baseline" && !time_col_for_baseline %in% names(crit_df)) {
+            warning(sprintf("Dataset '%s': Cannot use 'baseline' for AB imputation, time column '%s' not found. Skipping AB imputation.",
+                            dset_name, time_col_for_baseline), call. = FALSE)
+          } else {
+            # Calculate the single AB value per individual
+            individual_ab_values <- crit_df |>
+              dplyr::group_by(!!rlang::sym(id_col)) |>
+              dplyr::summarise(
+                assigned_AB = switch(
+                  impute_ab_method,
+                  "baseline" = { 
+                    valid_values <- .data$AB[!is.na(.data$AB)]
+                    if (length(valid_values) > 0) valid_values[which.min(.data[[time_col_for_baseline]])] else NA
+                  },
+                  "max" = max(.data$AB, na.rm = TRUE),
+                  "min" = min(.data$AB, na.rm = TRUE),
+                  "most_frequent" = {
+                    tbl <- table(.data$AB)
+                    if (length(tbl) > 0) as.numeric(names(tbl)[which.max(tbl)]) else NA
+                  },
+                  NA_real_ # Default for unknown method or if 'asis' somehow gets here
+                ), .groups = "drop"
+              ) |>
+              # Handle cases where all AB values were NA for an individual
+              dplyr::mutate(assigned_AB = ifelse(is.infinite(.data$assigned_AB), NA, .data$assigned_AB))
+            
+            # Merge back and overwrite the AB column
+            crit_df <- crit_df |>
+              dplyr::select(-dplyr::any_of("AB")) |> # Remove old AB column if it exists
+              dplyr::left_join(individual_ab_values, by = setNames(nm=id_col, id_col)) |>
+              dplyr::rename(AB = "assigned_AB")
+            
+            # Update the main data_processed list
+            data_processed[[dset_name]][[crit_source_file]] <- crit_df
+            if(verbose) message(sprintf("    -> Individual-level AB status assigned."))
+          }
+        } else if (impute_ab_method != "asis" && verbose) {
+          message(sprintf("  - Skipping individual-level AB assignment: 'AB' or '%s' column missing, or method is 'asis'.", id_col))
+        }
+        
+        
+        # --- DX Imputation ---
+        if (impute_dx_method != "asis" && "DX" %in% names(crit_df) && id_col %in% names(crit_df)) {
+          if(verbose) message(sprintf("  - Assigning individual-level DX status using method: '%s'", impute_dx_method))
+          
+          time_col_for_baseline <- config$preprocessing$time_output_column %||% "time"
+          if (impute_dx_method == "baseline" && !time_col_for_baseline %in% names(crit_df)) {
+            warning(sprintf("Dataset '%s': Cannot use 'baseline' for DX imputation, time column '%s' not found. Skipping DX imputation.",
+                            dset_name, time_col_for_baseline), call. = FALSE)
+          } else {
+            individual_dx_values <- crit_df |>
+              dplyr::group_by(!!rlang::sym(id_col)) |>
+              dplyr::summarise(
+                assigned_DX = switch(
+                  impute_dx_method,
+                  "baseline" = { 
+                    valid_values <- .data$DX[!is.na(.data$DX)]
+                    if (length(valid_values) > 0) valid_values[which.min(.data[[time_col_for_baseline]])] else NA
+                  },
+                  "max" = max(.data$DX, na.rm = TRUE),
+                  "min" = min(.data$DX, na.rm = TRUE),
+                  "most_frequent" = {
+                    tbl <- table(.data$DX)
+                    if (length(tbl) > 0) as.numeric(names(tbl)[which.max(tbl)]) else NA
+                  },
+                  NA_real_
+                ), .groups = "drop"
+              ) |>
+              dplyr::mutate(assigned_DX = ifelse(is.infinite(.data$assigned_DX), NA, .data$assigned_DX))
+            
+            crit_df <- crit_df |>
+              dplyr::select(-dplyr::any_of("DX")) |>
+              dplyr::left_join(individual_dx_values, by = setNames(nm=id_col, id_col)) |>
+              dplyr::rename(DX = "assigned_DX")
+            
+            data_processed[[dset_name]][[crit_source_file]] <- crit_df
+            if(verbose) message(sprintf("    -> Individual-level DX status assigned."))
+          }
+        } else if (impute_dx_method != "asis" && verbose) {
+          message(sprintf("  - Skipping individual-level DX assignment: 'DX' or '%s' column missing, or method is 'asis'.", id_col))
+        }
+        
+        # Now crit_df (and data_processed[[dset_name]][[crit_source_file]]) has the imputed AB/DX
         
         
       } # End if can_do_filtering

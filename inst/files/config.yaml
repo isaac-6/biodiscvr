@@ -13,6 +13,24 @@ required_data_columns:
 preprocessing:
   min_entries_per_id: 2
   id_column: "RID" # Column defining unique individuals
+
+  # --- AB and DX Imputation/Assignment Settings ---
+  # Method for assigning a single AB status per individual.
+  # Options: "baseline" (AB at earliest visit),
+  #          "max" (if any visit is AB=1, individual is AB=1),
+  #          "min" (if any visit is AB=0, individual is AB=0),
+  #          "most_frequent" (most common AB status for the individual),
+  #          "asis" (default, no change, use original per-visit AB).
+  impute_ab_method: "baseline" # Example
+
+  # Method for assigning a single DX status per individual.
+  # Options: "baseline" (DX at earliest visit),
+  #          "max" (highest DX value observed for the individual),
+  #          "min" (lowest DX value observed for the individual),
+  #          "most_frequent" (most common DX for the individual),
+  #          "asis" (default, no change, use original per-visit DX).
+  impute_dx_method: "baseline" # Example
+  
   criteria_source_file: "data"
   ignore_columns: ["idx", "inf_lat_vent", "lateral_ventricle", "choroid_plexus", "hemiwm", "hippocampus",
 "pallidum", "putamen", "caudate",
