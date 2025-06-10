@@ -329,6 +329,11 @@ if (!is.null(evaluation_output_csv)) {
 Evaluates biomarkers from your `literature_biomarkers.yaml` (custom or package default).
 
 ```{r eval_literature, eval=FALSE}
+if (file.exists(user_literature_defs_file)) {
+  literature_file_to_use <- user_literature_defs_file
+} else {
+  literature_file_to_use <- pkg_literature_defs_file
+}
 if (!file.exists(literature_file_to_use)) {
   warning("Literature biomarker file not found. Skipping evaluation.", immediate.=TRUE)
 } else {
