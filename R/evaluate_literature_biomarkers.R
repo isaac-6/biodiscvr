@@ -128,7 +128,8 @@ evaluate_literature_biomarkers <- function(lit_biomarker_file_path = system.file
     }
     
     # Add composite reference region
-    comp_regs <- c("brainstem", "hemiwm", "whole_cerebellum")
+    # comp_regs <- c("brainstem", "hemiwm", "whole_cerebellum") 
+    comp_regs <- c("brainstem", "cerebral_white_matter", "whole_cerebellum") 
     if(all((comp_regs) %in% names(current_eval_data_list$data_suv_bi))) {
       # Mean
       current_eval_data_list$data_suv_bi$composite <- rowMeans(current_eval_data_list$data_suv_bi[,comp_regs], na.rm = F)
