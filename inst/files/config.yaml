@@ -97,7 +97,7 @@ genetic_algorithm:
   mutation: "gareal_raMutation"
   elitism_prop: 2       # Number of best individuals to carry over (elitism) 
   seed: 42               # Random seed for reproducibility
-  parallel: TRUE        # Run in parallel processors. TRUE (all), FALSE, or number of processors to use.
+  parallel: FALSE        # Run in parallel processors. TRUE (all), FALSE, or number of processors to use.
   monitor: FALSE         # log each generation in the console. 
 
 # --- Other Potential Flags (from original list, if needed later) ---
