@@ -1,10 +1,13 @@
 ---
+
 title: 'biodiscvr: Biomarker Discovery Using Composite Value Ratios'
+
 tags:
   - R
   - biomarkers
   - neuroimaging
   - Alzheimer's disease
+
 authors:
   - name: Isaac Llorente-Saguer
     orcid: 0000-0002-7612-5331
@@ -14,12 +17,16 @@ authors:
     orcid: 0000-0003-0203-3909
     corresponding: true
     affiliation: 1
+
 affiliations:
   - name: UCL Hawkes Institute and Department of Computer Science, University College London, United Kingdom
     index: 1
     ror: 02jx3x895
+
 date: 20 May 2025
+
 bibliography: paper.bib
+
 ---
   
 # Summary
@@ -27,7 +34,8 @@ bibliography: paper.bib
 **biodiscvr** provides a framework for discovering and evaluating 
 optimised biomarkers defined as ratios of composite values derived from 
 feature sets (e.g., regional measurements from imaging data). 
-It was originally developed to analyse longitudinal single- and multi-cohort datasets.
+It was originally developed to analyse longitudinal single- and 
+multi-cohort datasets.
 
 The core functionality utilizes a Genetic Algorithm (GA) to search the 
 feature space for optimal numerator and denominator combinations based on 
@@ -42,34 +50,44 @@ evaluate them in multiple datasets.
 # Statement of need
 
 A **composite value ratio (CVR)** is defined as the ratio between two composite 
-aggregation of features. This can not be explored with brute-force, as the
-number of combinations is intractable. Encoding the space of combinations 
-and using an exploratory algorithm allows us to discover well-performing
-biomarkers, optimised for out goals.
+aggregation of features. This concept is particularly powerful in neuroimaging, 
+where shared confounding factors across features can cancel out, revealing more 
+robust biomarkers. However, brute-force exploration of CVRs is computationally 
+infeasible due to the combinatorial explosion of possible feature groupings. 
+Encoding this search space and applying an exploratory algorithm enables the 
+discovery of high-performing biomarkers tailored to specific clinical or 
+research goals.
 
-The core of the framework is the CVR concept, as factors that affect multiple
-features can cancel out, and this is particulary useful for neuroimaging.
-Beyond this, all the presented framework is modular: the discovery algorithm 
-could be changed; the metrics and fitness function can be adapted.
+While the core methodology has been previously described, there is currently no 
+openly available framework that implements it in a modular and extensible way. 
+This package fills that gap by providing a flexible implementation that allows 
+users to swap out discovery algorithms, redefine fitness metrics, and adapt the 
+pipeline to different domains.
 
-Nevertheless, here's the specific packages we used in the current version:
+A key innovation in this framework is the integration of multicohort 
+regularisation, which enhances generalisability by allowing the algorithm to be 
+informed by multiple independent datasets without requiring data merging. 
+This approach preserves cohort-specific structure while leveraging shared signal, 
+making it especially valuable in heterogeneous biomedical contexts.
+
+The current implementation relies on the following R packages:
 (GA, lme4, lmmpower, parallel).
 
 # Mathematics
 
-The search algorithm is guided by the sample size estimate of a hypothetical clinical trial,
-and by a truncated measure of group separation, so as to avoid 
+The search algorithm is guided by the sample size estimate of a hypothetical 
+clinical trial, and by a truncated measure of group separation, so as to avoid 
 a Pareto frontier when trying to optimise multiple metrics.
 
 When using multiple cohorts for biomarker discovery, the Pareto front is dealt
 with using a reference direction, and multiplying the fitness function by the 
 square of the similarity cosine with respect to the direction defined by the 
 fitness of multiple cohorts, thus modifying the search space for convergence 
-towards the desired equilibrium. This reference direction can be (ideally) the single best performance per cohort 
-(which the framework can evaluate), or when none is provided, it defaults to 
-a vector of ones (equal cohort weight).
+towards the desired equilibrium. This reference direction can be (ideally) the 
+single best performance per cohort (which the framework can evaluate), 
+or when none is provided, it defaults to a vector of ones (equal cohort weight).
 
-The metrics are described in `@llorente:2024`. A linear mixed-effects model is fit 
+The metrics are described in @llorente2024. A linear mixed-effects model is fit 
 to the log-transformed biomarker, and then the following metrics are assessed:
   - Sample size estimate for a hypothetical clinical trial, with their parameters 
     stated in the config.yaml file
@@ -80,7 +98,7 @@ to the log-transformed biomarker, and then the following metrics are assessed:
     
 # Citations
     
-This package builds upon the methodologies described in `@llorente:2024`. 
+This package builds upon the methodologies described in @llorente2024. 
   
 # Acknowledgements
 
