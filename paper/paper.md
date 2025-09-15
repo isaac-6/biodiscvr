@@ -42,14 +42,14 @@ evaluate them in multiple datasets.
   
 # Statement of need
 
-A **composite value ratio (CVR)** is defined as the ratio between two composite 
-aggregation of features. This concept is particularly powerful in neuroimaging, 
-where shared confounding factors across features can cancel out, revealing more 
-robust biomarkers. However, brute-force exploration of CVRs is computationally 
-infeasible due to the combinatorial explosion of possible feature groupings. 
-Encoding this search space and applying an exploratory algorithm enables the 
-discovery of high-performing biomarkers tailored to specific clinical or 
-research goals.
+A **composite value ratio (CVR)** [@saguer2022composite] is defined as the ratio 
+between two composite aggregation of features. This concept is particularly 
+powerful in neuroimaging, where shared confounding factors across features can 
+cancel out, revealing more robust biomarkers. However, brute-force exploration of 
+CVRs is computationally infeasible due to the combinatorial explosion of possible 
+feature groupings. Encoding this search space and applying an exploratory 
+algorithm enables the discovery of high-performing biomarkers tailored to 
+specific clinical or research goals.
 
 While the core methodology has been previously described, there is currently no 
 openly available framework that implements it in a modular and extensible way. 
@@ -100,3 +100,5 @@ Thank you, David Pérez Suárez, for testing the package and providing feedback.
 We acknowledge funding from a UKRI Future Leaders Fellowship (MR/S03546X/1, MR/X024288/1).
   
 # References
+The current implementation relies on the following R packages:
+(GA [@scrucca2016some], lme4 [@lme4], lmmpower [@longpower]).
