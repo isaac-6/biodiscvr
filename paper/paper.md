@@ -1,13 +1,10 @@
 ---
-
 title: 'biodiscvr: Biomarker Discovery Using Composite Value Ratios'
-
 tags:
   - R
   - biomarkers
   - neuroimaging
   - Alzheimer's disease
-
 authors:
   - name: Isaac Llorente-Saguer
     orcid: 0000-0002-7612-5331
@@ -17,16 +14,12 @@ authors:
     orcid: 0000-0003-0203-3909
     corresponding: true
     affiliation: 1
-
 affiliations:
   - name: UCL Hawkes Institute and Department of Computer Science, University College London, United Kingdom
     index: 1
     ror: 02jx3x895
-
 date: 20 May 2025
-
 bibliography: paper.bib
-
 ---
   
 # Summary
@@ -87,7 +80,7 @@ towards the desired equilibrium. This reference direction can be (ideally) the
 single best performance per cohort (which the framework can evaluate), 
 or when none is provided, it defaults to a vector of ones (equal cohort weight).
 
-The metrics are described in @llorente2024. A linear mixed-effects model is fit 
+The metrics are described in [@llorente2024]. A linear mixed-effects model is fit 
 to the log-transformed biomarker, and then the following metrics are assessed:
   - Sample size estimate for a hypothetical clinical trial, with their parameters 
     stated in the config.yaml file
@@ -98,7 +91,7 @@ to the log-transformed biomarker, and then the following metrics are assessed:
     
 # Citations
     
-This package builds upon the methodologies described in @llorente2024. 
+This package builds upon the methodologies described in [@llorente2024]. 
   
 # Acknowledgements
 
