@@ -39,7 +39,7 @@ The framework allows to define inclusion criteria (e.g., in config.yaml),
 preprocess data, run the discovery framework, perform regional ablation analysis,
 and evaluate lists of biomarkers (e.g., the discovered ones) and 
 evaluate them in multiple datasets.
-
+  
 # Statement of need
 
 A **composite value ratio (CVR)** is defined as the ratio between two composite 
@@ -64,8 +64,8 @@ This approach preserves cohort-specific structure while leveraging shared signal
 making it especially valuable in heterogeneous biomedical contexts.
 
 The current implementation relies on the following R packages:
-(GA, lme4, lmmpower, parallel).
-
+(GA [@scrucca2016some], lme4 [@lme4], lmmpower [@longpower]).
+  
 # Mathematics
 
 The search algorithm is guided by the sample size estimate of a hypothetical 
@@ -82,13 +82,14 @@ or when none is provided, it defaults to a vector of ones (equal cohort weight).
 
 The metrics are described in [@llorente2024]. A linear mixed-effects model is fit 
 to the log-transformed biomarker, and then the following metrics are assessed:
+ 
   - Sample size estimate for a hypothetical clinical trial, with their parameters 
     stated in the config.yaml file
   - Group separation: it is the t-statistic of the fixed effects of being amyloid-positive
   - Percentage error: standard deviation of the model residuals, as a proxy for 
     the coefficient of variation of the biomarker in its native space. 
 
-    
+     
 # Citations
     
 This package builds upon the methodologies described in [@llorente2024]. 
