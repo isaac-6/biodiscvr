@@ -5,8 +5,8 @@
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-[![License: GPL
-v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+[![License: GPL v3 or
+later](https://img.shields.io/badge/License-GPL%20v3%2B-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 [![R-CMD-check](https://github.com/isaac-6/biodiscvr/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/isaac-6/biodiscvr/actions/workflows/R-CMD-check.yaml)
 [![status](https://joss.theoj.org/papers/f143631ed4b6459a399248867b0da166/status.svg)](https://joss.theoj.org/papers/f143631ed4b6459a399248867b0da166)
 <!-- badges: end -->
@@ -113,5 +113,6 @@ you agree to abide by its terms.
 
 ## License
 
-This package is licensed under the GPL v3 License. See the
-[LICENSE](LICENSE.md) file for details.
+This package is licensed under the GNU General Public License v3.0 or
+later (GPL-3.0-or-later). See the [LICENSE](LICENSE.md) file for
+details.
