@@ -109,7 +109,10 @@ installation.
 
 Please note that the ‘biodiscvr’ project is released with a Contributor
 Code of Conduct (`code_of_conduct.md`). By contributing to this project,
-you agree to abide by its terms.
+you agree to abide by its terms. If you have questions, find bugs, or
+want to suggest features, please visit the [GitHub Issues
+page](https://github.com/isaac-6/biodiscvr/issues) to report them or
+start a discussion.
 
 ## License
 
