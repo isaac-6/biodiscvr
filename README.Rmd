@@ -28,6 +28,8 @@ knitr::opts_chunk$set(
 
 The core functionality utilizes a Genetic Algorithm (GA) to search the feature space for optimal numerator and denominator combinations based on biomarker performance metrics calculated using linear mixed-effects models (Group Separation, Sample Size Estimates).
 
+Note: intended for R version 4.5.1 and above.
+
 ## Installation
 
 You can install the development version of `biodiscvr` from [GitHub](https://github.com/isaac-6/biodiscvr), with or without vignettes, with:

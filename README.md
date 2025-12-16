@@ -23,6 +23,8 @@ feature space for optimal numerator and denominator combinations based
 on biomarker performance metrics calculated using linear mixed-effects
 models (Group Separation, Sample Size Estimates).
 
+Note: intended for R version 4.5.1 and above.
+
 ## Installation
 
 You can install the development version of `biodiscvr` from
