@@ -23,7 +23,13 @@ feature space for optimal numerator and denominator combinations based
 on biomarker performance metrics calculated using linear mixed-effects
 models (Group Separation, Sample Size Estimates).
 
-Note: intended for R version 4.5.1 and above.
+Notes: - Intended for R version 4.5.1 and above. - Although the
+underlying methodology is domain‑agnostic, the current implementation is
+tailored to Alzheimer’s disease (AD) research, reflecting the datasets
+and use cases that motivated the package. Several preprocessing steps,
+expected column names, and default region conventions are AD‑specific.
+Users applying biodiscvr to other domains may need to adjust variable
+names or modify preprocessing functions.
 
 ## Installation
 

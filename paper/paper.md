@@ -24,32 +24,39 @@ bibliography: paper.bib
   
 # Summary
   
-**biodiscvr** provides a framework for discovering and evaluating 
-optimised biomarkers defined as ratios of composite values derived from 
-feature sets (e.g., regional measurements from imaging data). 
-It was originally developed to analyse longitudinal single- and 
-multi-cohort datasets.
+**biodiscvr** provides a framework for discovering and evaluating
+optimised biomarkers defined as ratios of composite values derived from
+feature sets (e.g., regional measurements from imaging data).
+The conceptual approach is domain‑agnostic, but the current implementation
+is tailored to Alzheimer’s disease (AD) research, reflecting the motivating
+use cases that guided its development. As such, several preprocessing
+utilities, expected variable names, and default assumptions correspond to
+common AD datasets (e.g., cognitive status groupings, amyloid/tau measures,
+and region‑of‑interest conventions).
 
-The core functionality utilizes a Genetic Algorithm (GA) to search the 
-feature space for optimal numerator and denominator combinations based on 
-biomarker performance metrics calculated using linear mixed-effects models 
+The core functionality utilizes a Genetic Algorithm (GA) to search the
+feature space for optimal numerator and denominator combinations based on
+biomarker performance metrics calculated using linear mixed‑effects models
 (Group Separation, Sample Size Estimates).
 
-The framework allows to define inclusion criteria (e.g., in config.yaml),
-preprocess data, run the discovery framework, perform regional ablation analysis,
-and evaluate lists of biomarkers (e.g., the discovered ones) and 
-evaluate them in multiple datasets.
+The framework allows users to define inclusion criteria (e.g., in
+`config.yaml`), preprocess data, run the discovery workflow, perform
+regional ablation analyses, and evaluate lists of biomarkers (including
+those discovered by the algorithm) across multiple datasets. Although the
+current release is AD‑focused, the architecture is designed to support
+future extensions toward more domain‑agnostic workflows.
+
   
 # Statement of need
 
-A **composite value ratio (CVR)** [@saguer2022composite] is defined as the ratio 
-between two composite aggregation of features. This concept is particularly 
-powerful in neuroimaging, where shared confounding factors across features can 
-cancel out, revealing more robust biomarkers. However, brute-force exploration of 
-CVRs is computationally infeasible due to the combinatorial explosion of possible 
-feature groupings. Encoding this search space and applying an exploratory 
-algorithm enables the discovery of high-performing biomarkers tailored to 
-specific clinical or research goals.
+A **composite value ratio (CVR)** [@saguer2022composite] is defined as the
+ratio between two composite aggregations of features. This concept is
+particularly powerful in neuroimaging, where shared confounding factors
+across features can cancel out, revealing more robust biomarkers.
+However, brute‑force exploration of CVRs is computationally infeasible due
+to the combinatorial explosion of possible feature groupings. Encoding this
+search space and applying an exploratory algorithm enables the discovery of
+high‑performing biomarkers tailored to specific clinical or research goals.
 
 While the core methodology has been previously described, there is currently no 
 openly available framework that implements it in a modular and extensible way. 
@@ -57,11 +64,20 @@ This package fills that gap by providing a flexible implementation that allows
 users to swap out discovery algorithms, redefine fitness metrics, and adapt the 
 pipeline to different domains.
 
-A key innovation in this framework is the integration of multicohort 
-regularisation, which enhances generalisability by allowing the algorithm to be 
-informed by multiple independent datasets without requiring data merging. 
-This approach preserves cohort-specific structure while leveraging shared signal, 
-making it especially valuable in heterogeneous biomedical contexts.
+Because the package was developed in the context of Alzheimer’s disease
+research, several components—such as expected column names, group
+definitions, and domain‑specific constraints—reflect this initial focus.
+Users applying *biodiscvr* to other domains may need to adapt these
+elements, but the underlying framework is general and can operate on
+arbitrary numeric features.
+
+A key innovation in this framework is the integration of multicohort
+regularisation, which enhances generalisability by allowing the algorithm
+to be informed by multiple independent datasets without requiring data
+merging. This approach preserves cohort‑specific structure while leveraging
+shared signal, making it especially valuable in heterogeneous biomedical
+contexts.
+
 
 The current implementation relies on the following R packages:
 (GA [@scrucca2016some], lme4 [@lme4], lmmpower [@longpower]).
@@ -84,7 +100,7 @@ The metrics are described in [@llorente2024]. A linear mixed-effects model is fi
 to the log-transformed biomarker, and then the following metrics are assessed:
  
   - Sample size estimate for a hypothetical clinical trial, with their parameters 
-    stated in the config.yaml file
+    stated in the `config.yaml` file
   - Group separation: it is the t-statistic of the fixed effects of being amyloid-positive
   - Percentage error: standard deviation of the model residuals, as a proxy for 
     the coefficient of variation of the biomarker in its native space. 
