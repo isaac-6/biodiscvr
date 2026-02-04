@@ -76,18 +76,3 @@ genetic_algorithm:
   seed: 42               # Random seed for reproducibility
   parallel: FALSE        # Run in parallel processors. TRUE (all), FALSE, or number of processors to use.
   monitor: TRUE         # log each generation in the console. 
-
-# --- Other Potential Flags (from original list, if needed later) ---
-# Add these back if/when functions using them are implemented.
-# Keep them commented out for now if unused.
-# other_flags:
-#   flag_only_sse: false
-#   flag_onlyNAfill: false
-#   flag_imputeDX: "max"   # Options: "BL", "max", "mode"
-#   flag_imputeAB: "BL"    # Options: "BL", "max"
-#   flag_restrict_search: "all" # Options: "all", "braak56", "top"
-#   flag_gradient: false
-#   flag_converters: "all" # Options: "mode", "all"
-#   flag_subset: false
-#   flag_run_DDS: false
-#   flag_run_fixed: false

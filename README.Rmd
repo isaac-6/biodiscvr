@@ -31,6 +31,7 @@ The core functionality utilizes a Genetic Algorithm (GA) to search the feature s
 Notes: 
 - Intended for R version 4.5.1 and above. 
 - Although the underlying methodology is domain‑agnostic, the current implementation is tailored to Alzheimer’s disease (AD) research, reflecting the datasets and use cases that motivated the package. Several preprocessing steps, expected column names, and default region conventions are AD‑specific. Users applying biodiscvr to other domains may need to adjust variable names or modify preprocessing functions. 
+For a guide on how to adapt this framework to non-AD datasets, see the Contributing ("Adapting to Other Research Domains") section below.
 
 
 ## Installation
@@ -98,10 +99,29 @@ If you use `biodiscvr` in your research, please cite it. You can get the citatio
 
 ## Contributing
 
+Contributions to `biodiscvr` are welcome! Whether you are reporting a bug, suggesting a feature, or adapting the framework to a new clinical domain, your input is valuable.
+
+### Adapting to Other Research Domains
+While the default templates are tailored for Alzheimer's Disease (AD), the core discovery logic is domain-agnostic. To adapt the package to another field (e.g., oncology, cardiology, astronomy), follow these steps:
+
+1.  **Modify Configuration:** Update `inst/files/config.yaml` to reflect your domain-specific column names and desired trial parameters (power, significance level). After all, the sample size estimate is a measure of longitudinal statistical power.
+2.  **Custom Preprocessing:** If your data requires unique cleaning steps beyond simple renaming, you can modify or extend the logic in `R/preprocess.R`.
+3.  **Define New Fitness Metrics:** If your clinical goal is not based on t-statistics or sample size estimates (e.g., you want to optimize for Cox Proportional Hazards or AUC), you can implement a custom fitness function in `R/evaluation.R`.
+4.  **Discovery Logic:** The heuristic search logic lives in `R/biodiscvr.R` and `R/biodiscvr_multicohort` (currently a genetic algorithm).
+
+
+### Development Workflow
+1.  **Fork the repository** and create a feature branch.
+2.  **Submit a Pull Request** with a clear description of your changes.
+3.  Ensure that any new functions are documented using Roxygen2 comments.
+4.  Run `R CMD check` to ensure the package remains stable.
+
+### Reporting Issues
+If you find bugs or have questions about implementation, please visit the [GitHub Issues page](https://github.com/isaac-6/biodiscvr/issues).
+
+### Code of Conduct
 Please note that the 'biodiscvr' project is released with a Contributor Code of Conduct (`code_of_conduct.md`). By contributing to this project, you agree to abide by its terms.
-If you have questions, find bugs, or want to suggest features, please visit 
-the [GitHub Issues page](https://github.com/isaac-6/biodiscvr/issues) to 
-report them or start a discussion.
+
 
 ## License
 
