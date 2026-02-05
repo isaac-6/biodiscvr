@@ -34,6 +34,18 @@ We will cover the following steps:
 
 **Note:** Because this vignette uses placeholders for user-specific file paths, the R code chunks are generally set to `eval=FALSE`. You will need to copy, paste, and adapt the code chunks into your own R script or console, replacing the placeholder paths with the actual locations of your files.
 
+#### **Adapting the Framework to Other Domains**
+While this vignette uses Alzheimer's Disease (AD) examples (e.g., amyloid status and neuroimaging regions), `biodiscvr` is designed to be a general-purpose biomarker discovery engine. To adapt this to a different field (such as Oncology or astronomy):
+
+1.  **Define your Features:** Instead of brain regions, provide your domain-specific numeric features (e.g., gene expression levels, spectral intensities, imaging-derived metrics).
+2.  **Define your Outcome:** In `config.yaml`, update the `group` definition to match your target outcome (e.g., positives vs. negatives, responders vs. non responders, high risk vs. low risk).
+3.  **Map your Data:** Use `dict_suv.csv` (or an equivalent file) to map raw feature names to a standardised naming convention. This is especially useful when working with multiple datasets that use different labels: the framework uses this dictionary to harmonise names internally without modifying your original files. 
+
+The underlying optimisation logic—finding optimal ratios that are robust across multiple independent datasets—remains the same regardless of the context.
+If your application does not include longitudinal data, you may want to adapt the fitness function (e.g., using AUC, F1 score, or MAE instead of longitudinal consistency metrics).
+For technical instructions on how to modify the source code or fitness metrics for non-AD research, please refer to the "Adapting to Other Research Domains" section in the [README](https://github.com/isaac-6/biodiscvr/tree/paper?tab=readme-ov-file#adapting-to-other-research-domains)
+
+
 ## Setup: User Files and Paths
 
 Before running the workflow, ensure you have the following files prepared and know their locations:
@@ -51,13 +63,13 @@ You will also need to decide on output locations:
 
 **Package-Provided Files:**
 
-This workflow can utilize default configuration files included with the `biodiscvr` package (located in its `inst/files` directory):
+This workflow can utilise default configuration files included with the `biodiscvr` package (located in its `inst/files` directory):
 *   `config.yaml`: Default configuration.
 *   `dict_suv.csv`: Default SUV dictionary.
 *   `experiments.yaml`: Default set of discovery experiments.
 *   `literature_biomarkers.yaml`: (To be created) Default set of literature biomarkers.
 
-You can inspect these default files using `system.file("files", "<filename>", package = "biodiscvr")`. If you need to customize them, copy them from the package installation directory to your own project space and provide the path to your custom file instead of using the package default in the function calls below.
+You can inspect these default files using `system.file("files", "<filename>", package = "biodiscvr")`. If you need to customise them, copy them from the package installation directory to your own project space and provide the path to your custom file instead of using the package default in the function calls below.
 
 **Define Your Paths (Replace Placeholders):**
 

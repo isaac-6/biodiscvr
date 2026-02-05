@@ -23,6 +23,7 @@ library(biodiscvr)
 library(yaml)
 library(dplyr)
 library(readr)
+library(knitr)
 ```
 
 ## Introduction
@@ -210,7 +211,7 @@ if (target_dset_single %in% names(preprocessed_data_list_synth) && !is.null(conf
 
 Run `biodiscvr_multicohort` using a subset of synthetic cohorts.
 
-```{r multi_cohort_discovery_synth_v3, eval=FALSE}
+```{r multi_cohort_discovery_synth_v3, eval=TRUE}
 multi_cohort_result_df <- NULL
 multi_cohort_per_dataset_metrics <- NULL
 
@@ -251,6 +252,16 @@ if (length(datasets_for_multi_discovery) >= 1 && # Allow 1 for testing, ideally 
       print(head(multi_cohort_result_df, 1))
       message("Per-dataset metrics for the multi-cohort solution:")
       print(multi_cohort_per_dataset_metrics)
+      
+      print("table check...")
+      multi_cohort_result_df %>% 
+        dplyr::select(regs_numerator, regs_denominator, fitness_value, SepAB_All, SSE_All) %>%
+        kable(
+          caption = "Top Discovered Multi-Cohort Biomarker",
+          digits = 3,  # Rounds numbers to 3 decimal places for a cleaner look
+          format.args = list(big.mark = ",") # Adds commas to large numbers (like N)
+        )
+
   } else {
       message("Multi-cohort discovery failed or returned no result.")
   }
@@ -258,6 +269,19 @@ if (length(datasets_for_multi_discovery) >= 1 && # Allow 1 for testing, ideally 
   warning("Not enough valid datasets or config missing for multi-cohort discovery.")
 }
 ```
+
+#### **Interpreting Discovery Results**
+The `biodiscvr_multicohort` function returns a `result_row` containing the "consensus" biomarker found across all cohorts. Here is how to interpret the key columns:
+
+*   **Biomarker Composition (`regs_numerator` / `regs_denominator`):** These columns list the specific features (e.g., brain regions) selected by the Genetic Algorithm to form a well-performing ratio.
+*   **Consensus Fitness (`fitness_value`):** This is the final objective score. It represents the performance across all cohorts, adjusted by the angular penalty ($\cos^2\theta$) to ensure the signal is not driven by a single outlier dataset.
+*   **Performance Metrics:**
+    *   **SepAB:** The group separation (t-statistic). A higher value indicates a stronger ability to distinguish between the target groups (e.g., Amyloid positive vs. negative). Higher is mathematically better, but in practice, it has diminishing gains (e.g., the cutoff at $t=2.6$ vs $t=2.9$ change the p-value from about 0.005 to 0.002).
+    *   **SSE:** The Sample Size Estimate. This represents the number of subjects required for a hypothetical clinical trial using this biomarker. Lower values are better.
+    *   **Rep:** A metric of longitudinal consistency, as a percentage error on the measurement. Lower is better.
+
+For a full description of all arguments and return fields, see `?biodiscvr_multicohort`.
+
 
 ## 5. Evaluating Discovered Biomarkers (from Multi-Cohort Run)
 
