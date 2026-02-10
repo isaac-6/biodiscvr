@@ -1,6 +1,11 @@
 ---
 title: "Biodiscvr Workflow with User Data"
-output: rmarkdown::html_vignette
+date: "`r Sys.Date()`"
+toc-title: "Overview"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    number_sections: true
 vignette: >
   %\VignetteIndexEntry{Biodiscvr Workflow with User Data}
   %\VignetteEngine{knitr::rmarkdown}
@@ -11,16 +16,18 @@ vignette: >
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = FALSE # <<< IMPORTANT: Default to NOT evaluating chunks
+  eval = FALSE
 )
 # Load necessary packages for code display and explanation
 library(biodiscvr)
-library(yaml) # Needed for reading config examples potentially
+library(yaml)
 ```
 
 ## Introduction
+**Quick Start Note**: For a rapid, executed demonstration using pre-bundled synthetic data, please see the Case Demo: 
+`vignette("biodiscvr_synth", package = "biodiscvr")`
 
-This vignette demonstrates the typical end-to-end workflow for using the `biodiscvr` package to discover and evaluate biomarkers using **your own data**.
+The current vignette demonstrates the typical end-to-end workflow for using the `biodiscvr` package to discover and evaluate biomarkers using **your own data**.  
 
 We will cover the following steps:
 
@@ -32,9 +39,7 @@ We will cover the following steps:
 6.  Evaluating predefined literature biomarkers using `evaluate_literature_biomarkers()`.
 7.  Identifying key output files for reporting.
 
-**Note:** Because this vignette uses placeholders for user-specific file paths, the R code chunks are generally set to `eval=FALSE`. You will need to copy, paste, and adapt the code chunks into your own R script or console, replacing the placeholder paths with the actual locations of your files.
-
-#### **Adapting the Framework to Other Domains**
+### **Adapting the Framework to Other Domains**
 While this vignette uses Alzheimer's Disease (AD) examples (e.g., amyloid status and neuroimaging regions), `biodiscvr` is designed to be a general-purpose biomarker discovery engine. To adapt this to a different field (such as Oncology or astronomy):
 
 1.  **Define your Features:** Instead of brain regions, provide your domain-specific numeric features (e.g., gene expression levels, spectral intensities, imaging-derived metrics).
@@ -47,6 +52,18 @@ For technical instructions on how to modify the source code or fitness metrics f
 
 
 ## Setup: User Files and Paths
+
+BioDisCVR uses a decentralized loading system. Each cohort should be stored in its own folder within a main root directory. A typical setup looks like this:
+
+```text
+my_data_root/
+├── Cohort_A/
+│   ├── data.csv            # Metadata
+│   └── data_suv_bi.csv     # Numeric features
+└── Cohort_B/
+    ├── data.csv
+    └── data_suv_bi.csv
+```
 
 Before running the workflow, ensure you have the following files prepared and know their locations:
 
@@ -73,6 +90,8 @@ You can inspect these default files using `system.file("files", "<filename>", pa
 
 **Define Your Paths (Replace Placeholders):**
 
+<details>
+<summary><strong>Click to expand: Comprehensive Path Setup Code</strong></summary>
 ```r
 # --- USER: Define paths to YOUR files and directories ---
 
@@ -127,11 +146,11 @@ pkg_literature_defs_file <- system.file("files", "literature_biomarkers.yaml", p
 # config <- yaml::read_yaml(custom_config_path)
 # If using package default config (preprocess_data will load it):
 # For other functions, we'll get it from preprocess_data output.
-# For now, let's assume preprocess_data handles config loading.
 
 ```
+</details>
 
-## Step 1: Loading Datasets
+## Loading Datasets
 
 This step scans your `user_data_root_dir` for subdirectories matching `datasets_to_process` and loads the `data.csv` and `data_suv_bi.csv` files from each.
 
@@ -143,9 +162,9 @@ loaded_data_raw <- load_datasets(root_path = user_data_root_dir)
 
 *Expected Output:* A list named `loaded_data_raw`.
 
-## Step 2: Preprocessing Data (Checks, Preparation, Filtering)
+## Preprocessing Data (Checks, Preparation, Filtering)
 
-This single function now handles:
+This single function handles:
 *   Validating loaded data against configuration and dictionary.
 *   Calculating the `time` variable from a date column (e.g., `ScanDate`).
 *   Performing SUV column matching and renaming/subsetting.
@@ -155,27 +174,6 @@ This single function now handles:
 If `user_supporting_files_dir` is provided and contains `config.yaml` and `dict_suv.csv`, those will be used. Otherwise, `preprocess_data` will attempt to use the default versions from `inst/files/` within the package.
 
 ```{r preprocess_data_merged, eval=FALSE}
-# Run the consolidated preprocessing step
-# If user_supporting_files_dir is NULL or doesn't contain config/dict,
-# preprocess_data should default to package internal files.
-# The 'files_path' argument in preprocess_data points to where config.yaml and dict_suv.csv are.
-# If using package defaults, this path is derived internally.
-# For this vignette, let's assume the user might provide their own, or the function handles defaults.
-
-# Option 1: User provides path to their config/dict
-# preprocessed_output <- preprocess_data(
-#   loaded_data = loaded_data_raw,
-#   files_path = user_supporting_files_dir, # Path to dir with user's config.yaml & dict_suv.csv
-#   config_filename = "config.yaml",        # Name of user's config file
-#   log_directory = user_log_dir,
-#   log_file_prefix = paste0(run_tag, "_preprocess_log_"),
-#   scandate_column = "ScanDate", # Or get from config if preprocess_data does that
-#   verbose = TRUE
-# )
-
-# Option 2: To explicitly use package default config/dict,
-# preprocess_data needs to be designed to find them if files_path is NULL or a specific flag is set.
-# Assuming preprocess_data handles this:
 # If files_path is NULL, it uses system.file("files", config_filename, package="biodiscvr")
 preprocessed_output <- preprocess_data(
   loaded_data = loaded_data_raw,
@@ -189,22 +187,15 @@ preprocessed_output <- preprocess_data(
   verbose = TRUE
 )
 
-
-# Review the validation report for potential issues
-# print("Validation Report Summary:")
-# print(lapply(preprocessed_output$validation_report, names))
-
-# The preprocessed data is in preprocessed_output$data
-# The loaded config is in preprocessed_output$config
 preprocessed_data_list <- preprocessed_output$data
 config_loaded <- preprocessed_output$config # Use this config for subsequent steps
 ```
 
 *Expected Output:* A list named `preprocessed_output` containing `$data` (the preprocessed data list), `$config` (loaded configuration), `$validation_report`, and `$log_file`. The `preprocessed_data_list` variable will hold the data for the next steps.
 
-## Step 3: Creating Demographics Tables
+## Creating Demographics Tables
 
-Generates a summary table for each dataset based on the *preprocessed* data.
+Generates a summary table for each dataset metadata based on the *preprocessed* files.
 
 ```{r demographics, eval=FALSE}
 # Create output directory for demographics if it doesn't exist
@@ -228,9 +219,9 @@ for (dset_name in names(preprocessed_data_list)) {
 
 *Expected Output:* CSV files saved in `demographics_dir`.
 
-## Step 4: Running Discovery Experiments
-
-Uses `run_experiments` based on your `experiments.yaml` (either custom or package default).
+## Running Discovery Experiments
+This phase involves the automated search for an optimal biomarker ratio. The package uses a Genetic Algorithm (GA) to navigate the combinatorial space of feature groupings.  
+The `run_experiments()` function executes a batch of discovery runs ( from `experiments.yaml`) across your selected cohorts. It prioritises biomarkers that achieve a high **consensus fitness**, meaning they perform well and consistently across independent cohorts.
 
 ```{r run_experiments, eval=FALSE}
 # Determine which experiments file to use
@@ -260,7 +251,7 @@ message("Experiment runs complete. Main results appended to: ", main_results_csv
 
 *Expected Output:* `main_results_csv` populated. Plots saved.
 
-## Step 5: Evaluating Literature Biomarkers
+## Evaluating Literature Biomarkers
 
 Evaluates biomarkers from your `literature_biomarkers.yaml` (custom or package default).
 
@@ -294,13 +285,30 @@ if (!file.exists(literature_file_to_use)) {
 
 *Expected Output:* `literature_results_csv` populated.
 
+## Feature Ablation
+In case you are wondering "is there a subset of CVR that performs better on dataset X?": the `run_ablation()` function performs a "feature removal" analysis, identifying which regions are essential and which can be removed without sacrificing statistical power.
+
+```{r ablation}
+ablation_results <- run_ablation(
+  discovered_biomarkers_csv_path = file.path(user_output_dir, main_results_csv),
+  prepared_data_list = data_list,
+  config = config,
+  output_ablation_results_csv_path = file.path(user_output_dir, "refined_biomarker.csv")
+)
+```
+*Expected Output:* `refined_biomarker.csv` populated with the biomarkers' sample size estimates before and after feature ablation, and with detailed features before and after.
+
 ## Reporting Output Files
 
 After running the workflow, the key output files generated in your `user_output_dir` will be:
 
-1.  **Main Discovery & Evaluation Results:**
+0.  **Main Discovery & Evaluation Results:**
     *   Path: `main_results_csv`
     *   Content: Results from `run_experiments`.
+    
+1.  **Ablation Results:**
+    *   Path: `refined_biomarker.csv` inside `user_output_dir`
+    *   Content: Results from `run_ablation`.
 
 2.  **Literature Biomarker Evaluation Results:**
     *   Path: `literature_results_csv`
