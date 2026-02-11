@@ -50,6 +50,7 @@ if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 # Data Loading and Harmonization
 
 Multi-cohort datasets often use different naming conventions. `biodiscvr` addresses this by applying a harmonization layer:  
+
 1.  **Loading:** `load_datasets()` scans subdirectories for raw data.  
 2.  **Preprocessing:** `preprocess_data()` uses a dictionary to rename features and applies inclusion filters.
 
@@ -120,6 +121,7 @@ Because the fitness function is maximized, the steady increase in the ‘Best’
 # Interpreting Results
 
 The algorithm identifies well-performing numerator and denominator features. We evaluate success using these metrics:  
+
 *   **SepAB_All:** Group separation ($t$-statistic).  
 *   **SSE_All:** Sample Size Estimate.
 

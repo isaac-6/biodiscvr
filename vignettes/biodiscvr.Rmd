@@ -67,13 +67,13 @@ my_data_root/
 
 Before running the workflow, ensure you have the following files prepared and know their locations:
 
-1.  **Root Data Directory:** The main folder containing subdirectories for each dataset (e.g., "ADNI", "OASIS"). Each subdirectory should contain at least `data.csv` and `data_suv_bi.csv`.
-2.  **Configuration File (`config.yaml`):** Contains parameters for preprocessing (including `date_column` for time calculation, inclusion criteria), model equations, power calculations, and GA settings.
-3.  **SUV Dictionary (`dict_suv.csv`):** Defines SUV region names for matching/renaming.
-4.  **Experiments File (`experiments.yaml`):** Defines the sequence of discovery runs.
-5.  **Literature Biomarkers File (`literature_biomarkers.yaml`):** Defines standard biomarkers for comparison.
+1.  **Root Data Directory:** The main folder containing subdirectories for each dataset (e.g., "ADNI", "OASIS"). Each subdirectory should contain at least `data.csv` and `data_suv_bi.csv`.  
+2.  **Configuration File (`config.yaml`):** Contains parameters for preprocessing (including `date_column` for time calculation, inclusion criteria), model equations, power calculations, and GA settings.  
+3.  **SUV Dictionary (`dict_suv.csv`):** Defines SUV region names for matching/renaming.  
+4.  **Experiments File (`experiments.yaml`):** Defines the sequence of discovery runs.  
+5.  **Literature Biomarkers File (`literature_biomarkers.yaml`):** Defines standard biomarkers for comparison.  
 
-You will also need to decide on output locations:
+You will also need to decide on output locations:  
 
 6.  **Output Directory:** A folder where results (CSV files, plots) will be saved.
 7.  **Log Directory (Optional):** A folder to store detailed log files from `preprocess_data`.
@@ -81,6 +81,7 @@ You will also need to decide on output locations:
 **Package-Provided Files:**
 
 This workflow can utilise default configuration files included with the `biodiscvr` package (located in its `inst/files` directory):
+
 *   `config.yaml`: Default configuration.
 *   `dict_suv.csv`: Default SUV dictionary.
 *   `experiments.yaml`: Default set of discovery experiments.
@@ -164,11 +165,12 @@ loaded_data_raw <- load_datasets(root_path = user_data_root_dir)
 
 ## Preprocessing Data (Checks, Preparation, Filtering)
 
-This single function handles:
-*   Validating loaded data against configuration and dictionary.
-*   Calculating the `time` variable from a date column (e.g., `ScanDate`).
-*   Performing SUV column matching and renaming/subsetting.
-*   Applying filtering based on minimum entries and group-specific inclusion criteria.
+This single function handles:  
+
+*   Validating loaded data against configuration and dictionary.  
+*   Calculating the `time` variable from a date column (e.g., `ScanDate`).  
+*   Performing SUV column matching and renaming/subsetting.  
+*   Applying filtering based on minimum entries and group-specific inclusion criteria.  
 *   Sets up logging.
 
 If `user_supporting_files_dir` is provided and contains `config.yaml` and `dict_suv.csv`, those will be used. Otherwise, `preprocess_data` will attempt to use the default versions from `inst/files/` within the package.
