@@ -11,3 +11,5 @@ files/dict_suv_old.csv
 inst/doc
 /doc/
 /Meta/
+tests/testthat/_snaps
+tests/testthat/test_results.csv

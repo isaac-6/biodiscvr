@@ -1,373 +1,165 @@
 ---
-title: "Biodiscvr: Synthetic Data Workflow Example"
-output: rmarkdown::html_vignette
+title: "Biodiscvr: Synthetic Data Case Demo"
+date: "`r Sys.Date()`"
+toc-title: "Overview"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    number_sections: true
 vignette: >
-  %\VignetteIndexEntry{Biodiscvr: Synthetic Data Workflow}
+  %\VignetteIndexEntry{Biodiscvr: Synthetic Data Case Demo}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
+
 
 ```{r setup, include = FALSE}
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>",
-  eval = TRUE, # Default to evaluating chunks for this synthetic example
-  fig.width = 7,
-  fig.height = 5,
-  warning = FALSE, 
-  message = FALSE 
+  eval = TRUE,
+  message = FALSE,
+  warning = FALSE
 )
-# Load necessary packages
-# Ensure these are in Suggests or Imports in DESCRIPTION
 library(biodiscvr)
-library(yaml)
+library(knitr)
 library(dplyr)
-library(readr)
+library(yaml)
 ```
 
-## Introduction
+# Introduction
 
-This vignette demonstrates the end-to-end workflow for using the `biodiscvr` package. We will use a synthetic dataset included with the package to illustrate all major steps, from loading data to discovering and evaluating biomarkers.
+The `biodiscvr` package provides a data-driven framework for the discovery of optimized biomarkers. Its showcase focuses on identifying **Composite Value Ratios (CVRs)**: combinations of features mathematically optimized to maximize clinical group separation while minimizing the sample size required for clinical trials.
 
-This allows running the entire pipeline and understand the inputs, outputs, and capabilities of `biodiscvr`.
+This vignette serves as a case demonstration using synthetic multi-cohort data.
 
-The workflow covers:
+# Environment Setup
 
-1.  Setting up paths to the (synthetic) data and output locations.
-2.  Loading the synthetic datasets using `load_datasets()`.
-3.  Checking data integrity, preparing SUV data, calculating time variables, and applying preprocessing filters using the consolidated `preprocess_data()` function.
-4.  Generating demographic summaries using `create_demographics_table()`.
-5.  Running a single-cohort biomarker discovery (`biodiscvr_single`).
-6.  Running a multi-cohort biomarker discovery (`biodiscvr_multicohort`).
-7.  Evaluating the biomarkers found by the multi-cohort discovery across all available synthetic cohorts (`evaluate_biomarkers()`).
-8.  Optionally, refining a top biomarker using iterative ablation (`refine_biomarker_by_ablation`).
+We start by locating the synthetic data and example configuration files bundled with the package, and defining a temporary output directory.
 
-## Setup: Synthetic Data and Output Paths
+```{r setup_paths}
+# Locate package-internal synthetic data and configs
+synth_data_dir <- system.file("synthdata", package = "biodiscvr", mustWork = TRUE)
+pkg_files      <- system.file("files", package = "biodiscvr", mustWork = TRUE)
 
-The `biodiscvr` package includes synthetic data in `inst/synthdata/` (cohort1, cohort2, cohort3) and example configuration files in `inst/files/` tailored for this synthetic data.
-Code is set to eval=FALSE. Change to TRUE or run it manually on a script.
-
-```{r define_paths_synth_vignette, eval=TRUE}
-# --- Paths to Package-Internal Synthetic Data & Configs ---
-# These will be used by the functions.
-synth_data_root_dir <- system.file("synthdata", package = "biodiscvr", mustWork = TRUE)
-# The specific config/dict files will be referenced by name, and preprocess_data
-# will use system.file to locate them if its files_path argument is NULL or
-# if the files are not found in a user-provided files_path.
-
-# --- Define Output Locations (using tempdir for this vignette) ---
-# In a real analysis, replace tempdir() with your desired project output folder.
-user_output_dir <- file.path(tempdir(), paste0("biodiscvr_synth_run_", format(Sys.time(), "%Y%m%d%H%M%S")))
-if (!dir.exists(user_output_dir)) dir.create(user_output_dir, recursive = TRUE)
-message("Vignette outputs will be saved to: ", user_output_dir)
-
-single_cohort_results_csv <- "synth_single_cohort_discovery.csv"
-multi_cohort_results_csv <- "synth_multi_cohort_discovery.csv"
-evaluation_results_csv <- file.path(user_output_dir, "synth_final_biomarker_evaluation.csv")
-ablation_results_csv <- file.path(user_output_dir, "synth_ablation_study_results.csv") # If run
-demographics_dir <- file.path(user_output_dir, "synth_demographics")
-log_dir_synth <- file.path(user_output_dir, "synth_logs")
-
-# --- Define Datasets ---
-all_synth_datasets <- list.dirs(synth_data_root_dir, full.names = FALSE, recursive = FALSE)
-all_synth_datasets <- all_synth_datasets[nzchar(all_synth_datasets)]
-
-if(length(all_synth_datasets) == 0) {
-  stop("No synthetic dataset subdirectories found in 'inst/synthdata'. Please ensure cohort1, cohort2, etc. exist.")
-}
-message("Found synthetic datasets: ", paste(all_synth_datasets, collapse=", "))
-
-# Define which datasets to use for different stages
-datasets_for_single_discovery <- all_synth_datasets[1] # e.g., "cohort1"
-datasets_for_multi_discovery <- all_synth_datasets[1:min(2, length(all_synth_datasets))] # Use first 1 or 2
-datasets_for_final_evaluation <- all_synth_datasets # Evaluate on all
-
-run_tag_synth <- "SynthVignetteRun"
-
-# Define names of package-internal config/dict files for synthetic data
-pkg_synth_config_filename <- "config_synth.yaml"
-pkg_synth_dict_filename <- "dict_suv_synth.csv"
-pkg_synth_experiments_file <- system.file("files", "experiments_synth.yaml", package = "biodiscvr", mustWork = TRUE) # Not used in this vignette
-
-# This global config_synth_for_vignette is primarily for functions that might need config
-# *outside* of preprocess_data, like setting up GA parameters for direct calls if needed.
-# preprocess_data will load its own copy.
-path_to_pkg_files_for_global_config <- system.file("files", package = "biodiscvr", mustWork = TRUE)
-full_path_global_synth_config <- file.path(path_to_pkg_files_for_global_config, pkg_synth_config_filename)
-if(!file.exists(full_path_global_synth_config)) {
-    stop("Global synthetic config file '", pkg_synth_config_filename, "' not found in package 'inst/files/'.")
-}
-config_synth_for_vignette <- yaml::read_yaml(full_path_global_synth_config)
+# Create a temporary directory for results
+output_dir <- file.path(tempdir(), "biodiscvr_demo")
+if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 ```
 
-## 1. Load, Check, Prepare, and Preprocess Data
+# Data Loading and Harmonization
 
-This single step combines loading, initial checks, SUV preparation (matching/renaming based on `dict_suv_synth.csv`), time variable calculation, and criteria-based filtering, all driven by `config_synth.yaml`. We will instruct `preprocess_data` to use the package-internal configuration files.
+Multi-cohort datasets often use different naming conventions. `biodiscvr` addresses this by applying a harmonization layer:  
 
-```{r load_and_preprocess_synth_merged_v2, eval=TRUE}
+1.  **Loading:** `load_datasets()` scans subdirectories for raw data.  
+2.  **Preprocessing:** `preprocess_data()` uses a dictionary to rename features and applies inclusion filters.
+
+```{r preprocess}
 # Load raw data
-loaded_data_raw_synth <- NULL
-if (dir.exists(synth_data_root_dir) && length(all_synth_datasets) > 0) {
-  loaded_data_raw_synth <- load_datasets(root_path = synth_data_root_dir)
-  message("Loaded data for: ", paste(names(loaded_data_raw_synth), collapse=", "))
-} else {
-  stop("Could not load synthetic data. Check 'inst/synthdata' structure.")
-}
+raw_data <- load_datasets(root_path = synth_data_dir)
 
-# Preprocess Data (which includes check & prepare steps)
-preprocessed_output <- NULL
-config_from_preprocess <- NULL 
-preprocessed_data_list_synth <- NULL 
+# Harmonize data
+preprocessed <- preprocess_data(
+  loaded_data = raw_data,
+  files_path = pkg_files, 
+  config_filename = "config_synth.yaml", 
+  dict_suv_filename = "dict_suv_synth.csv",
+  verbose = FALSE
+)
 
-if (!is.null(loaded_data_raw_synth)) {
-  preprocessed_output <- preprocess_data(
-    loaded_data = loaded_data_raw_synth,
-    files_path = path_to_pkg_files_for_global_config, 
-    config_filename = pkg_synth_config_filename, 
-    dict_suv_filename = pkg_synth_dict_filename, 
-    log_directory = log_dir_synth,
-    log_file_prefix = paste0(run_tag_synth, "_preprocess_log_"),
-    verbose = FALSE # Keep vignette output concise
-  )
-  message("Preprocessing (including checks and preparation) complete.")
-  preprocessed_data_list_synth <- preprocessed_output$data
-  config_from_preprocess <- preprocessed_output$config # Use this for subsequent steps
-} else {
-  stop("Skipping preprocessing: Raw data not loaded.")
-}
+# Extract harmonized data and config
+data_list <- preprocessed$data
+config    <- preprocessed$config
 ```
 
-## 2. Creating Demographics Tables
+# Data Inspection
 
-Generates summary tables for the synthetic cohorts that survived preprocessing.
+We can now inspect the internal structure of the data frame, displaying technical feature columns.
 
-```{r demographics_synth_v3, eval=TRUE}
-if (!is.null(preprocessed_data_list_synth) && !is.null(config_from_preprocess)) {
-  if (!dir.exists(demographics_dir)) dir.create(demographics_dir, recursive = TRUE)
-  
-  for (dset_name in names(preprocessed_data_list_synth)) {
-    demographics_table <- create_demographics_table(
-      processed_dataset_list = preprocessed_data_list_synth[[dset_name]],
-      dataset_name = dset_name,
-      output_csv_path = file.path(demographics_dir, paste0("demographics_synth_", dset_name, ".csv")),
-      id_col = config_from_preprocess$preprocessing$id_column %||% "RID"
-    )
-    message(sprintf("Demographics table for %s generated. Displaying first few rows:", dset_name))
-    print(head(demographics_table))
-  }
-} else {
-  message("Skipping demographics: Preprocessed data or config not available.")
-}
+```{r view_data_table}
+# Access the first available group in the first cohort
+sample_df <- data_list[[1]][[2]]
+total_cols <- ncol(sample_df)
+preview_table <- cbind(
+  sample_df[1:5, 1:3],
+  `...` = "...",
+  sample_df[1:5, (total_cols - 3):total_cols]
+)
+
+knitr::kable(
+  preview_table, 
+  caption = "Table 1: Partial view of harmonized data structure showing features."
+)
 ```
 
-## 3. Single-Cohort Biomarker Discovery (Example on `r knitr::inline_expr('datasets_for_single_discovery[1]')`)
 
-Run `biodiscvr_single` on one synthetic cohort. GA parameters in `config_synth.yaml` should be set for a very quick run (e.g., low `popSize`, `maxiter`).
 
-```{r single_cohort_discovery_synth_v3, eval=TRUE}
-single_cohort_result_df <- NULL
-target_dset_single <- datasets_for_single_discovery[1]
+# Multi-Cohort Biomarker Discovery
 
-if (target_dset_single %in% names(preprocessed_data_list_synth) && !is.null(config_from_preprocess)) {
-  message(sprintf("Running single-cohort discovery on %s, Group CI...", target_dset_single))
-  
-  # Ensure GA config is present
-  if(is.null(config_from_preprocess$genetic_algorithm)) stop("GA parameters missing in config_from_preprocess$genetic_algorithm")
+We use a Genetic Algorithm to evaluate feature combinations across the first two cohorts.
 
-  
-  ###
-  
-  single_cohort_result_list <- biodiscvr_single(
-    dataset_data = preprocessed_data_list_synth[[target_dset_single]],
-    dataset_name = target_dset_single,
-    group = "CI", 
-    config = config_from_preprocess,
-    var_composition = 1,
-    experiment_tag = paste(run_tag_synth, target_dset_single, "CI", sep="_"),
-    output_csv_name = single_cohort_results_csv, 
-    output_dir = user_output_dir,
-    save_plot = TRUE, 
-    ga_seed = 42,
-    # Pass GA params from config explicitly if biodiscvr_single doesn't read them itself
-    min_bounds = NULL,
-    max_bounds = NULL
-    # Add other GA params like popSize, maxiter if biodiscvr_single expects them directly
-    # or if it uses them from the config$genetic_algorithm passed to it.
-  )
-  if(!is.null(single_cohort_result_list) && !is.null(single_cohort_result_list$result_row)){
-      single_cohort_result_df <- single_cohort_result_list$result_row 
-      message("Single-cohort discovery for ", target_dset_single, " CI complete. Results (first row):")
-      print(head(single_cohort_result_df, 1))
-  } else {
-      message("Single-cohort discovery for ", target_dset_single, " CI failed or returned no result.")
-  }
-} else {
-  warning("Target dataset for single-cohort discovery not found or config missing.")
-}
+```{r discovery}
+# E.g., select the first two cohorts
+discovery_cohorts <- names(data_list)[1:min(2, length(data_list))]
+
+# Run discovery
+results <- biodiscvr_multicohort(
+  preprocessed_data = data_list,
+  datasets_to_run = discovery_cohorts,
+  group = "CI", 
+  config = config,
+  ga_seed = 42,
+  output_dir = output_dir,
+  output_csv_name = "multi_cohort_discovery_results.csv"
+)
+
+best_biomarker <- results$result_row
 ```
+Because the fitness function is maximized, the steady increase in the ‘Best’ fitness value across generations shows that the genetic algorithm is progressing as expected. Ideally, the final generations should show no further improvement; if needed, you can increase the number of generations (`maxiter` in the configuration) or adjust the number of stagnant generations allowed before early stopping (`run`).
 
-## 4. Multi-Cohort Biomarker Discovery (Example on `r knitr::inline_expr('paste(datasets_for_multi_discovery, collapse=" & ")')`)
 
-Run `biodiscvr_multicohort` using a subset of synthetic cohorts.
+# Interpreting Results
 
-```{r multi_cohort_discovery_synth_v3, eval=FALSE}
-multi_cohort_result_df <- NULL
-multi_cohort_per_dataset_metrics <- NULL
+The algorithm identifies well-performing numerator and denominator features. We evaluate success using these metrics:  
 
-if (length(datasets_for_multi_discovery) >= 1 && # Allow 1 for testing, ideally >=2
-    all(datasets_for_multi_discovery %in% names(preprocessed_data_list_synth)) &&
-    !is.null(config_from_preprocess)) {
+*   **SepAB_All:** Group separation ($t$-statistic).  
+*   **SSE_All:** Sample Size Estimate.
 
-  message(sprintf("Running multi-cohort discovery on %s, Group CI...", paste(datasets_for_multi_discovery, collapse=" & ")))
+```{r show_results}
+best_biomarker %>% 
+  select(regs_numerator, regs_denominator, fitness_value, SepAB_All, SSE_All) %>%
+  kable(caption = "Table 2: Top Optimized Multi-Cohort Biomarker")
+```
+The observed separation statistics (23.8 and 27.3 in the training cohorts) demonstrate robust group discrimination, and the associated sample‑size estimates (SSE ≈ 16 and 18) point to strong statistical efficiency. Notably, the two metrics are well balanced.
 
-  ref_fitness_values <- rep(1, length(datasets_for_multi_discovery))
-  names(ref_fitness_values) <- datasets_for_multi_discovery
-  if(!is.null(single_cohort_result_df) && 
-     single_cohort_result_df$discovery_dataset[1] %in% names(ref_fitness_values) &&
-     is.finite(single_cohort_result_df$fitness_value[1])){
-      ref_fitness_values[single_cohort_result_df$discovery_dataset[1]] <- single_cohort_result_df$fitness_value[1]
-  }
+# Validation on Independent Data
 
-  multi_cohort_result_list <- biodiscvr_multicohort(
-    preprocessed_data = preprocessed_data_list_synth,
-    datasets_to_run = datasets_for_multi_discovery,
-    group = "CI", 
-    config = config_from_preprocess,
-    var_composition = config_from_preprocess$genetic_algorithm$var_composition %||% 1,
-    reference_fitness = ref_fitness_values, 
-    experiment_tag = paste(run_tag_synth, "Multi", paste(datasets_for_multi_discovery, collapse="-"), "CI", sep="_"),
-    output_csv_name = multi_cohort_results_csv, 
-    output_dir = user_output_dir, 
-    save_plot = TRUE,
-    ga_seed = 42,
-    min_bounds = NULL,
-    max_bounds = NULL
+We now test the discovered biomarker on a "hold-out" cohort (Cohort 3) to ensure generalizability.
+
+```{r evaluation}
+# Identify hold-out cohort
+hold_out_cohort <- names(data_list)[3]
+
+if (!is.na(hold_out_cohort)) {
+  eval_results <- evaluate_biomarkers(
+    discovery_results_csv_path = file.path(output_dir, "multi_cohort_discovery_results.csv"),
+    prepared_data_list = data_list,
+    config = config,
+    datasets_to_evaluate = hold_out_cohort,
+    groups_to_evaluate = "CI"
   )
 
-  if(!is.null(multi_cohort_result_list) && !is.null(multi_cohort_result_list$result_row)){
-      multi_cohort_result_df <- multi_cohort_result_list$result_row
-      multi_cohort_per_dataset_metrics <- multi_cohort_result_list$per_dataset_metrics
-      message("Multi-cohort discovery complete. Aggregated result (first row):")
-      print(head(multi_cohort_result_df, 1))
-      message("Per-dataset metrics for the multi-cohort solution:")
-      print(multi_cohort_per_dataset_metrics)
-  } else {
-      message("Multi-cohort discovery failed or returned no result.")
-  }
-} else {
-  warning("Not enough valid datasets or config missing for multi-cohort discovery.")
+  eval_results %>% 
+    select(discovery_dataset, SepAB, SSE) %>%
+    kable(caption = "Table 3: Generalization Performance on Independent Cohort")
 }
 ```
+The independent cohort shows separation and sample size values similar to those from the training data. That’s generally desirable, though it won’t always be the case if the cohorts come from different subpopulations. Either way, the key comparison is should be between biomarkers, not between cohorts.
 
-## 5. Evaluating Discovered Biomarkers (from Multi-Cohort Run)
+# Conclusion
+This vignette illustrates the complete workflow for multi‑cohort biomarker discovery using biodiscvr, from harmonization to optimization and independent validation. The synthetic example highlights how CVRs can achieve robust group separation while maintaining low sample size requirements, demonstrating the package’s utility for early‑stage biomarker development.
 
-Evaluate the best multi-cohort biomarker across all available synthetic cohorts.
-
-```{r eval_discovered_synth_v4, eval=FALSE}
-evaluated_mc_biomarker_df <- NULL
-results_full_path <- file.path(user_output_dir, multi_cohort_results_csv)
-if (file.exists(results_full_path) && !is.null(preprocessed_data_list_synth) && !is.null(config_from_preprocess)) {
-  message("Evaluating the best multi-cohort biomarker across all datasets...")
-  
-  evaluated_mc_biomarker_df <- evaluate_biomarkers(
-    discovery_results_csv_path = results_full_path,
-    prepared_data_list = preprocessed_data_list_synth,
-    config = config_from_preprocess,
-    datasets_to_evaluate = datasets_for_final_evaluation, 
-    groups_to_evaluate = NULL, # NULL takes the same group as the input row; 
-    # one could instead force a specific group/groups, like c("CU", "CI") 
-    calculate_ci = FALSE,
-    output_evaluation_csv_path = evaluation_results_csv,
-    verbose = FALSE
-  )
-  if(!is.null(evaluated_mc_biomarker_df)){
-      message("Evaluation of multi-cohort biomarker complete. Results saved to: ", evaluation_results_csv)
-      print(head(evaluated_mc_biomarker_df))
-  }
-} else {
-  message("Skipping evaluation of multi-cohort biomarker: '", basename(multi_cohort_results_csv), "' not found or prerequisite data missing.")
-  message("Ensure the multi-cohort discovery step (Step 4) ran successfully and created the CSV.")
-}
+# Session Information
+```{r info}
+sessionInfo()
 ```
-
-## 6. Iterative Regional Ablation (Optional)
-
-Perform ablation on the best biomarker found from the multi-cohort run. This chunk is `eval=FALSE` as it can be lengthy.
-
-```{r run_ablation_synth_v3, eval=FALSE}
-if (!is.null(multi_cohort_result_df) && nrow(multi_cohort_result_df) > 0 && !is.null(config_from_preprocess)) {
-  message("Performing iterative ablation on the best multi-cohort biomarker...")
-
-  initial_num_regs <- stringr::str_split(multi_cohort_result_df$regs_numerator[1], "\\|")[[1]]
-  initial_den_regs <- stringr::str_split(multi_cohort_result_df$regs_denominator[1], "\\|")[[1]]
-  initial_var_comp <- multi_cohort_result_df$var_composition[1] %||% (config_from_preprocess$genetic_algorithm$var_composition %||% 1)
-
-
-  if (length(initial_num_regs) > 0 && length(initial_den_regs) > 0 && !is.na(initial_var_comp)) {
-
-    ablation_output <- run_ablation(
-        discovered_biomarkers_csv_path = evaluation_results_csv,
-        prepared_data_list = preprocessed_data_list_synth,
-        config = config_from_preprocess,
-        output_ablation_results_csv_path = ablation_results_csv,
-        datasets_for_ablation_eval = datasets_for_multi_discovery,
-        groups_for_ablation_eval = c("CU", "CI"),
-        features_for_ablation = NULL,
-        verbose = TRUE
-    )
-    message("Ablation study complete.")
-    # print(ablation_output$final_baseline_metrics)
-    # saveRDS(ablation_output, file = file.path(user_output_dir, "ablation_best_mc_biomarker.rds"))
-  } else {
-    message("Skipping ablation: Best multi-cohort biomarker regions/composition not clearly defined from result row.")
-  }
-} else {
-  message("Skipping ablation study: No multi-cohort biomarker result available or config missing.")
-}
-```
-
-## 7. Run multiple experiments, for multiple cohorts, independently and simultaneously (optional)
-The `run_experiments()` function can automate many of the single-cohort and multi-cohort discovery steps described above, based on an experiments definition file (e.g., `experiments_synth.yaml`).
-
-This is typically how you would run a larger batch of discovery variations. **This chunk is `eval=FALSE` due to its potential runtime.**
-
-```{r run_experiments_orchestration, eval=FALSE}
-# Ensure preprocessed_data_list_synth and config_from_preprocess are available
-# Ensure pkg_synth_experiments_file points to a valid experiments definition YAML
-
-if (!is.null(preprocessed_data_list_synth) && !is.null(config_from_preprocess)) {
-  # Define a new CSV for the orchestrated run_experiments output
-  orchestrated_results_csv <- "orchestrated_discovery_results.csv"
-  
-  run_experiments_output <- run_experiments(
-    prepared_data_list = preprocessed_data_list_synth,
-    config = config_from_preprocess,
-    groups = c("CU", "CI"),
-    features = NULL, # If NULL, all features are available for the algorithm
-    experiments_config_path = pkg_synth_experiments_file,
-    output_csv_name = orchestrated_results_csv,
-    output_dir = user_output_dir,
-    save_plots = FALSE, # plots of fitness vs generation for the search algorithm
-    datasets_to_run = datasets_for_multi_discovery, # Example: run on a subset
-    experiment_master_tag = paste0(run_tag_synth, "_Orchestrated"),
-    base_ga_seed = 42
-  )
-  message("Orchestrated experiments complete. Results in: ", orchestrated_results_csv)
-} else {
-  message("Skipping orchestrated run_experiments: Prerequisite data/config missing.")
-}
-```
-
-
-## Conclusion & Output Files
-
-This vignette demonstrated a streamlined workflow using `biodiscvr`'s synthetic data. Key outputs generated in `r knitr::inline_expr('user_output_dir')` would include:
-
-1.  **Single-Cohort Discovery Results:** `r knitr::inline_expr('basename(single_cohort_results_csv)')`
-2.  **Multi-Cohort Discovery Results:** `r knitr::inline_expr('basename(multi_cohort_results_csv)')`
-3.  **Evaluation of Multi-Cohort Biomarker:** `r knitr::inline_expr('basename(evaluation_results_csv)')`
-4.  **Demographics Tables:** In `r knitr::inline_expr('basename(demographics_dir)')`
-5.  **Logs & Plots:** In `r knitr::inline_expr('basename(log_dir_synth)')` and `r knitr::inline_expr('basename(user_output_dir)')`.
-6.  **Orchestrated Experiment Results:** (e.g., `orchestrated_discovery_results.csv`) if Step 7 is run manually.
-
-Remember to replace `tempdir()` with your actual project directory for persistent storage of results. Consult individual function help (`?function_name`) for more details.

@@ -66,8 +66,8 @@ power_params:
 # Settings for the GA run by get_individual_fitness.
 # These are examples; adjust based on your specific GA implementation and needs.
 genetic_algorithm:
-  popSize: 32           # Population size per generation. Time scales linearly.
-  maxiter: 30          # Maximum number of generations (iterations) default 600. Time scales linearly.
+  popSize: 16           # Population size per generation (e.g., 32). Time scales linearly. 
+  maxiter: 10          # Maximum number of generations (iterations) default 600. Time scales linearly.
   run: 15              # Early stopping if no fitness improvement in X generations default 100
   pmutation: 0.5        # Probability of mutation
   crossover: "gareal_blxCrossover"
@@ -76,18 +76,3 @@ genetic_algorithm:
   seed: 42               # Random seed for reproducibility
   parallel: FALSE        # Run in parallel processors. TRUE (all), FALSE, or number of processors to use.
   monitor: TRUE         # log each generation in the console. 
-
-# --- Other Potential Flags (from original list, if needed later) ---
-# Add these back if/when functions using them are implemented.
-# Keep them commented out for now if unused.
-# other_flags:
-#   flag_only_sse: false
-#   flag_onlyNAfill: false
-#   flag_imputeDX: "max"   # Options: "BL", "max", "mode"
-#   flag_imputeAB: "BL"    # Options: "BL", "max"
-#   flag_restrict_search: "all" # Options: "all", "braak56", "top"
-#   flag_gradient: false
-#   flag_converters: "all" # Options: "mode", "all"
-#   flag_subset: false
-#   flag_run_DDS: false
-#   flag_run_fixed: false
