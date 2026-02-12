@@ -10,7 +10,7 @@ authors:
     orcid: 0000-0002-7612-5331
     corresponding: false
     affiliation: 1
-  - name: Neil Oxtoby
+  - name: Neil P. Oxtoby
     orcid: 0000-0003-0203-3909
     corresponding: true
     affiliation: 1
@@ -110,7 +110,7 @@ automated data preparation. The `load_datasets()` and `preprocess_data()` functi
 dictionary-based matching to resolve naming inconsistencies across independent sites (e.g., 
 mapping heterogeneous regional labels to a standard template). This layer ensures that the 
 discovery engine operates on harmonised data structures while preserving the unique statistical 
-properties and "noise" of each original cohort.
+properties of each original cohort.
 
 ### 3. The Discovery Engine
 The core discovery process is managed by `run_experiments()`, which manages single-cohort 
@@ -151,7 +151,7 @@ $$G = s \cdot \left( \prod_{i=1}^{K} |f_i| \right) \cdot \cos^2(\theta)$$
 
 Where $\theta$ [@llorente2025theta] is the angle between the fitness vector $\mathbf{F}$ and a **reference direction vector** $\mathbf{R}$, and $s$ represents the directional consistency.
 
-*   **Product-based Aggregation:** By using the product of fitnesses rather than the sum, the framework ensures that a biomarker must perform well across *all* cohorts. A low performance in any single cohort will disproportionately penalise the global score.
+*   **Product-based Aggregation:** By using the product of fitnesses rather than the sum, the framework ensures that a biomarker must perform well across *all* cohorts. A low performance in any single cohort will heavily penalise the global score.
 *   **Reference Direction ($\mathbf{R}$):** This vector represents the desired balance of performance across cohorts. While it can be a vector of ones $[1, 1, \dots, 1]$, the framework defaults to the single best performance achieved per cohort, defining an adaptable performance ceiling.
 *   **Angular Penalty ($\cos^2\theta$):** This term penalises candidate biomarkers with high angular deviation from the reference, effectively enforcing consensus across cohorts (i.e., avoiding overfitting to a subset of cohorts).
 *   **Directional Sign ($s$):** To ensure biological validity, $s$ is set to $1$ only if all individual cohort fitnesses $f_i$ are positive. If any $f_i < 0$ (indicating a reversed effect direction), $s$ is set to $-1$.
