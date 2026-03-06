@@ -161,7 +161,7 @@ The following elements capture the intuition behind the global fitness function 
 The framework navigates the combinatorial space of feature ratios and groupings using an exploratory search algorithm, currently implemented via a Genetic Algorithm. The use of the directional sign $s$ creates a "hard barrier" in the search space, guiding the algorithm away from invalid solutions. This approach enables the discovery of complex, multi-feature biomarkers that are robust across heterogeneous datasets and would be computationally intractable to identify via exhaustive search.
 
 
-# Citations
+# Prior Work
     
 This package builds upon the methodologies described in [@llorente2024], and later expanded on [@llorente2026enhanced]. The multicohort analysis has been possible thanks to theta [@llorente2025theta], a summary metric involving multiple dimensions. 
   
