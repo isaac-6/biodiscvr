@@ -69,7 +69,7 @@ to discover high-performing CVRs tailored to specific clinical or research objec
 such as maximising group separation or minimising sample size requirements ([@saguer2022composite, @llorente2024, @llorente2026enhanced]).
 
 A novel contribution of this implementation is the introduction 
-of **multicohort regularisation** (see Methods). Traditionally, biomarker discovery 
+of **multicohort regularisation** (see *Methods*). Traditionally, biomarker discovery 
 is performed on single datasets or pooled data. Pooling often requires intensive 
 data harmonisation to mitigate batch effects and can lead to models that overfit 
 to the most prevalent data structure. `biodiscvr` advances the CVR framework by 
@@ -151,6 +151,7 @@ $$G = s \cdot \left( \prod_{i=1}^{K} |f_i| \right) \cdot \cos^2(\theta)$$
 
 Where $\theta$ [@llorente2025theta] is the angle between the fitness vector $\mathbf{F}$ and a **reference direction vector** $\mathbf{R}$, and $s$ represents the directional consistency.
 
+The following elements capture the intuition behind the global fitness function and how it enforces multicohort consistency:
 *   **Product-based Aggregation:** By using the product of fitnesses rather than the sum, the framework ensures that a biomarker must perform well across *all* cohorts. A low performance in any single cohort will heavily penalise the global score.
 *   **Reference Direction ($\mathbf{R}$):** This vector represents the desired balance of performance across cohorts. While it can be a vector of ones $[1, 1, \dots, 1]$, the framework defaults to the single best performance achieved per cohort, defining an adaptable performance ceiling.
 *   **Angular Penalty ($\cos^2\theta$):** This term penalises candidate biomarkers with high angular deviation from the reference, effectively enforcing consensus across cohorts (i.e., avoiding overfitting to a subset of cohorts).
