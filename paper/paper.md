@@ -66,7 +66,7 @@ combinations is computationally unfeasible; for a typical neuroimaging template
 with 100 regions (or features), the search space for possible ratios exceeds $10^{46}$ combinations. 
 `biodiscvr` addresses this by providing an automated exploratory framework 
 to discover high-performing CVRs tailored to specific clinical or research objectives, 
-such as maximising group separation or minimising sample size requirements ([@saguer2022composite, @llorente2024, @llorente2026enhanced]).
+such as maximising group separation or minimising sample size requirements ([@saguer2022composite; @llorente2024; @llorente2026enhanced]).
 
 A novel contribution of this implementation is the introduction 
 of **multicohort regularisation** (see *Methods*). Traditionally, biomarker discovery 
