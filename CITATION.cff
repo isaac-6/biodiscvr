@@ -1,0 +1,36 @@
+cff-version: "1.2.0"
+authors:
+- family-names: Llorente-Saguer
+  given-names: Isaac
+  orcid: "https://orcid.org/0000-0002-7612-5331"
+- family-names: Oxtoby
+  given-names: Neil P.
+  orcid: "https://orcid.org/0000-0003-0203-3909"
+contact:
+- family-names: Oxtoby
+  given-names: Neil P.
+  orcid: "https://orcid.org/0000-0003-0203-3909"
+doi: 10.5281/zenodo.18621404
+message: If you use this software, please cite our article in the
+  Journal of Open Source Software.
+preferred-citation:
+  authors:
+  - family-names: Llorente-Saguer
+    given-names: Isaac
+    orcid: "https://orcid.org/0000-0002-7612-5331"
+  - family-names: Oxtoby
+    given-names: Neil P.
+    orcid: "https://orcid.org/0000-0003-0203-3909"
+  date-published: 2026-03-15
+  doi: 10.21105/joss.09070
+  issn: 2475-9066
+  issue: 119
+  journal: Journal of Open Source Software
+  publisher:
+    name: Open Journals
+  start: 9070
+  title: "biodiscvr: Biomarker Discovery Using Composite Value Ratios"
+  type: article
+  url: "https://joss.theoj.org/papers/10.21105/joss.09070"
+  volume: 11
+title: "biodiscvr: Biomarker Discovery Using Composite Value Ratios"
